@@ -1,0 +1,39 @@
+{
+  "data": [
+    {
+      "background_image_url": "/static/images/qwatt_lamp.jpg",
+      "button_link": "/project/qwatt",
+      "button_text": "View project",
+      "categories": [
+        {
+          "created_at": "2025-05-27T12:45:17",
+          "id": 1,
+          "name": "Branding Design"
+        }
+      ],
+      "created_at": "2025-05-27T12:45:17",
+      "deliverables": null,
+      "description": "Tagma's Branding Shines Through In Qwatt's identity-Bright, Bold, And Timeless, Just Like its LEDs. We Wraps it in A Design That Speaks Clarity And Brilliance",
+      "id": 1,
+      "title": "Qwatt LED Bulb"
+    },
+    {
+      "background_image_url": "/static/images/digital_transformation.jpg",
+      "button_link": "/project/digital",
+      "button_text": "View project",
+      "categories": [
+        {
+          "created_at": "2025-05-27T12:45:17",
+          "id": 2,
+          "name": "IT Consulting"
+        }
+      ],
+      "created_at": "2025-05-27T12:45:17",
+      "deliverables": "Digital Discovery (Site Architecture/Site Map)\nWireframes\nWebsite Design - Desktop And Mobile\nDigital Brand Extension - Formatting Style Sheet\nWebsite Development And Implementation\nCMS: Craft\nThird-Party Integrations - Salesforce CRM And Pardot\nMarketing Assets: PDF Generation, Email (Transactional And Campaign) Templates Etc.\nMajor And Minor Website Features E.g. Interactive Masterplan, Interactive Home Options Floorplan, Etc.\nIntegration With REA And Domain",
+      "description": "Working alongside the Ausbuild team, we are extremely proud to have delivered on the project goal - to design and develop a new website that reflected the company's standards, services and products. AusbuildCom.Au Is A Lead Generating, UX Focused Website That Is Powered By A Creditable Tech Stack: Salesforce CRM, Heroku And Craft CMS. The Site Is Integrated With Pardot And REA/ Domain, And, Includes A Number Of Standout Features Such An Interactive Masterplan And Floorplans, Ability To Compare/Favourite Properties, Dynamic Content And More. We're Pretty Excited To See This Project Come To Life And Continue To Evolve!",
+      "id": 2,
+      "title": "A Digital Transformation"
+    }
+  ],
+  "status": "success"
+}

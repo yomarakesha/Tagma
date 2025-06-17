@@ -1,0 +1,115 @@
+# Translations template for PROJECT.
+# Copyright (C) 2025 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-06-13 22:04+0500\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: app/__init__.py:46
+msgid "Main Image"
+msgstr ""
+
+#: app/__init__.py:47
+msgid "Additional Images"
+msgstr ""
+
+#: app/__init__.py:57
+msgid "Main image is required"
+msgstr ""
+
+#: app/__init__.py:63
+msgid "Banner Image"
+msgstr ""
+
+#: app/__init__.py:73
+msgid "Banner image is required"
+msgstr ""
+
+#: app/__init__.py:79
+msgid "Background Image"
+msgstr ""
+
+#: app/__init__.py:89
+msgid "Background image is required"
+msgstr ""
+
+#: app/__init__.py:95
+msgid "Client Logo"
+msgstr ""
+
+#: app/__init__.py:105
+msgid "Client logo is required"
+msgstr ""
+
+#: app/__init__.py:111
+msgid "Page Image"
+msgstr ""
+
+#: app/__init__.py:121
+msgid "Page image is required"
+msgstr ""
+
+#: app/__init__.py:210
+msgid "Logout"
+msgstr ""
+
+#: app/routes/main.py:22
+msgid "Welcome to the Landing Page API"
+msgstr ""
+
+#: app/routes/main.py:82
+msgid "No contact information found"
+msgstr ""
+
+#: app/routes/main.py:92
+msgid "No about information found"
+msgstr ""
+
+#: app/routes/main.py:107
+msgid "Invalid username or password"
+msgstr ""
+
+#: app/routes/main.py:109
+msgid "Login"
+msgstr ""
+
+#: app/templates/base.html:5
+msgid "Title"
+msgstr ""
+
+#: app/templates/base.html:11
+msgid "Russian"
+msgstr ""
+
+#: app/templates/base.html:12
+msgid "Turkmen"
+msgstr ""
+
+#: app/templates/base.html:13
+msgid "English"
+msgstr ""
+
+#: app/templates/index.html:2
+msgid "Home"
+msgstr ""
+
+#: app/templates/index.html:4
+msgid "Welcome to Our Website"
+msgstr ""
+
+#: app/templates/index.html:5
+msgid "This is the home page."
+msgstr ""
+

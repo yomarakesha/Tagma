@@ -1,0 +1,33 @@
+# Виртуальное окружение Python
+venv/
+.env
+
+# Локальная база данных
+site.db
+
+# Файлы Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Временные файлы
+*.log
+*.tmp
+*.bak
+
+# Статические файлы, загруженные пользователями (если они не должны быть в репозитории)
+static/uploads/*
+
+# Файлы IDE
+.idea/
+*.iml
+.vscode/
+
+# Системные файлы Windows
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store

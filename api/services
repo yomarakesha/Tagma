@@ -1,0 +1,29 @@
+{
+  "data": [
+    {
+      "button_link": "/services/it-consulting",
+      "button_text": null,
+      "created_at": "2025-05-27T12:45:17",
+      "id": 1,
+      "subtitles": "Technology infrastructure, Expert consulting, Cybersecurity, System Optimization",
+      "title": "IT Consulting"
+    },
+    {
+      "button_link": "/services/branding-design",
+      "button_text": null,
+      "created_at": "2025-05-27T12:45:17",
+      "id": 2,
+      "subtitles": "Logo design, Brand identity, Packaging design, Creative direction",
+      "title": "Branding Design"
+    },
+    {
+      "button_link": "/services/erp-solutions",
+      "button_text": null,
+      "created_at": "2025-05-27T12:45:17",
+      "id": 3,
+      "subtitles": "ERP implementation, Custom ERP development, System integration, ERP support",
+      "title": "ERP Solutions"
+    }
+  ],
+  "status": "success"
+}

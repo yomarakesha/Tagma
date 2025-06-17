@@ -1,0 +1,14 @@
+{
+  "data": [
+    {
+      "button_link": "/services",
+      "button_text": "See what we can do",
+      "created_at": "2025-05-27T12:45:17",
+      "id": 1,
+      "image_url": "/static/images/banner.jpg",
+      "subtitle": "We are IT company specialising in Marketing, Branding design and ERP solutions",
+      "title": "WE MAKE IT HAPPEN"
+    }
+  ],
+  "status": "success"
+}

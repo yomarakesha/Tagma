@@ -1,0 +1,65 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - TAGMA</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .custom-form {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+        .btn-primary {
+            background-color: #9333ea;
+            color: #ffffff;
+            transition: background-color 0.2s;
+        }
+        .btn-primary:hover {
+            background-color: #7e22ce;
+        }
+        .alert-danger {
+            background-color: #fee2e2;
+            border-color: #fecaca;
+            color: #dc2626;
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-600 to-blue-500 min-h-screen">
+    <div class="container mt-5">
+        <div class="custom-form">
+            <div class="flex items-center justify-center mb-4">
+                <img src="/static/images/logo.png"               
+                alt="TAGMA Logo" class="h-10 mr-2">
+                <h2 class="text-3xl font-bold text-gray-800">Login to Admin Panel</h2>
+            </div>
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="alert alert-danger p-3 mb-4">
+                        {{ messages[0] }}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            <form method="POST">
+                <div class="form-group">
+                    <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                    <input type="text" class="form-control mt-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" class="form-control mt-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" id="password" name="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-full py-2 rounded-lg">Login</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

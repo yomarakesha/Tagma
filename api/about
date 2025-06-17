@@ -1,0 +1,12 @@
+{
+  "data": {
+    "created_at": "2025-05-27T12:45:17",
+    "description1": "At Tagma, we combine cutting-edge technology with creative expertise to deliver exceptional results. Our team is passionate about helping clients achieve their goals through tailored IT consulting, branding design, and ERP solutions. With a deep understanding of industry trends and a commitment to excellence, we transform ideas into impactful realities.",
+    "description2": "Founded in 2015, we\u2019ve grown into a trusted partner for businesses across Turkmenistan and beyond. Our mission is to drive digital transformation by providing reliable, scalable, and forward-thinking solutions that make a difference.",
+    "id": 1,
+    "image_url": "/static/images/about_office.jpg",
+    "subtitle": "Tagma is a dynamic IT company based in Ashgabat, Turkmenistan, specializing in innovative solutions that empower businesses to thrive in the digital age.",
+    "title": "About Us"
+  },
+  "status": "success"
+}

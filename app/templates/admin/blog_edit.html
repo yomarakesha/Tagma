@@ -1,0 +1,36 @@
+{% extends 'admin/model/edit.html' %}
+{% block tail %}
+    {{ super() }}
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var textareas = document.querySelectorAll('textarea.quill-editor');
+            textareas.forEach(function(textarea) {
+                var container = document.createElement('div');
+                container.id = 'quill-editor-' + textarea.id;
+                container.style.height = '200px';
+                textarea.parentNode.insertBefore(container, textarea);
+                textarea.style.display = 'none';
+
+                var quill = new Quill('#' + container.id, {
+                    theme: 'snow',
+                    modules: {
+                        toolbar: [
+                            [{ 'header': [1, 2, 3, false] }],
+                            ['bold', 'italic', 'underline'],
+                            ['image', 'link'],
+                            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                            ['clean']
+                        ]
+                    }
+                });
+
+                quill.root.innerHTML = textarea.value;
+                quill.on('text-change', function() {
+                    textarea.value = quill.root.innerHTML;
+                });
+            });
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{% trans %}Home{% endtrans %}{% endblock %}
+{% block content %}
+    <h1>{% trans %}Welcome to Our Website{% endtrans %}</h1>
+    <p>{% trans %}This is the home page.{% endtrans %}</p>
+    {% for banner in banners %}
+        <div>
+            <h2>{{ banner.title }}</h2>
+            <p>{{ banner.subtitle }}</p>
+            <img src="{{ banner.image_url }}" alt="{{ banner.title }}">
+            <a href="{{ banner.button_link }}">{{ banner.button_text }}</a>
+        </div>
+    {% endfor %}
+{% endblock %}

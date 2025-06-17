@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="{{ get_locale() }}">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}{% trans %}Title{% endtrans %}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('main.index', lang='ru') }}">{% trans %}Russian{% endtrans %}</a></li>
+            <li><a href="{{ url_for('main.index', lang='tk') }}">{% trans %}Turkmen{% endtrans %}</a></li>
+            <li><a href="{{ url_for('main.index', lang='en') }}">{% trans %}English{% endtrans %}</a></li>
+        </ul>
+    </nav>
+    <div class="content">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>
