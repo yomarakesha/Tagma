@@ -14,14 +14,16 @@ from werkzeug.utils import secure_filename
 from app.utils.file_upload import FileUploadField, MultipleFileUploadField
 from wtforms import TextAreaField
 from wtforms.fields import SelectMultipleField
-from flask_admin.form import Select2Widget
+from flask_admin.form import Select2Field, Select2Widget
+from wtforms import validators
 from flask import current_app
+
 db = SQLAlchemy()
 migrate = Migrate()
 babel = Babel()
 
 # Конфигурация загрузки файлов
-UPLOAD_FOLDER = 'static/uploads'
+UPLOAD_FOLDER = 'app/static/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
 def allowed_file(filename):
@@ -47,6 +49,14 @@ class ModelAdminView(ModelView):
     def is_accessible(self):
         return current_user.is_authenticated and current_user.is_admin
 
+    def _run_view(self, fn, *args, **kwargs):
+        try:
+            return fn(self, *args, **kwargs)
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error in view: {str(e)}")
+            raise
+
 class BlogAdminView(ModelAdminView):
     column_list = ('id', 'title_ru', 'title_tk', 'title_en', 'date', 'read_time', 'image_url', 'created_at')
     form_columns = ('title_ru', 'title_tk', 'title_en', 'description_ru', 'description_tk', 'description_en', 'image_file', 'additional_images_files', 'date', 'read_time', 'link')
@@ -68,9 +78,10 @@ class BlogAdminView(ModelAdminView):
         if form.image_file.data:
             filename = secure_filename(form.image_file.data.filename)
             file_path = os.path.join(UPLOAD_FOLDER, filename)
+            current_app.logger.info(f"Saving image to {file_path}")
             form.image_file.data.save(file_path)
             model.image_url = f'/static/uploads/{filename}'
-        if not model.image_url:
+        if not model.image_url and is_created:
             raise ValueError(_("Main image is required"))
 
 class BannerAdminView(ModelAdminView):
@@ -84,9 +95,10 @@ class BannerAdminView(ModelAdminView):
         if form.image_file.data:
             filename = secure_filename(form.image_file.data.filename)
             file_path = os.path.join(UPLOAD_FOLDER, filename)
+            current_app.logger.info(f"Saving image to {file_path}")
             form.image_file.data.save(file_path)
             model.image_url = f'/static/uploads/{filename}'
-        if not model.image_url:
+        if not model.image_url and is_created:
             raise ValueError(_("Banner image is required"))
 
 class ProjectAdminView(ModelAdminView):
@@ -116,31 +128,34 @@ class ProjectAdminView(ModelAdminView):
     }
 
     def get_form(self):
-        form = super().get_form()
-        return form
+        return super().get_form()
 
     def create_form(self):
         form = super().create_form()
-        from app.models.category import Category  # type: ignore
-        with current_app.app_context():  # Используем current_app
+        from app.models.category import Category
+        with current_app.app_context():
             form.categories.choices = [(str(c.id), c.__str__()) for c in db.session.query(Category).all()]
         return form
 
     def edit_form(self, obj=None):
         form = super().edit_form(obj)
-        from app.models.category import Category  # type: ignore
-        with current_app.app_context():  # Используем current_app
+        from app.models.category import Category
+        with current_app.app_context():
             form.categories.choices = [(str(c.id), c.__str__()) for c in db.session.query(Category).all()]
+            if obj:
+                form.categories.data = [c.id for c in obj.categories]
         return form
 
     def on_model_change(self, form, model, is_created):
         if form.background_image_file.data:
-            filename = secure_filename(form.background_image_file.data.filename)
+            filename = secure_filename(form.image_file.data.filename)
             file_path = os.path.join(UPLOAD_FOLDER, filename)
-            form.background_image_file.data.save(file_path)
+            current_app.logger.info(f"Saving image to {file_path}")
+            form.image_file.data.save(file_path)
             model.background_image_url = f'/static/uploads/{filename}'
-        if not model.background_image_url:
+        if not model.background_image_url and is_created:
             raise ValueError(_("Background image is required"))
+
 class ClientAdminView(ModelAdminView):
     column_list = ('id', 'logo_url', 'created_at')
     form_columns = ('logo_file',)
@@ -152,9 +167,10 @@ class ClientAdminView(ModelAdminView):
         if form.logo_file.data:
             filename = secure_filename(form.logo_file.data.filename)
             file_path = os.path.join(UPLOAD_FOLDER, filename)
+            current_app.logger.info(f"Saving image to {file_path}")
             form.logo_file.data.save(file_path)
             model.logo_url = f'/static/uploads/{filename}'
-        if not model.logo_url:
+        if not model.logo_url and is_created:
             raise ValueError(_("Client logo is required"))
 
 class AboutAdminView(ModelAdminView):
@@ -168,9 +184,10 @@ class AboutAdminView(ModelAdminView):
         if form.image_file.data:
             filename = secure_filename(form.image_file.data.filename)
             file_path = os.path.join(UPLOAD_FOLDER, filename)
+            current_app.logger.info(f"Saving image to {file_path}")
             form.image_file.data.save(file_path)
             model.image_url = f'/static/uploads/{filename}'
-        if not model.image_url:
+        if not model.image_url and is_created:
             raise ValueError(_("Page image is required"))
 
 class UserAdminView(ModelAdminView):
@@ -188,6 +205,33 @@ class ServiceAdminView(ModelAdminView):
 class ReviewAdminView(ModelAdminView):
     column_list = ('id', 'content_ru', 'content_tk', 'content_en', 'author_ru', 'author_tk', 'author_en', 'project_id', 'created_at')
     form_columns = ('content_ru', 'content_tk', 'content_en', 'author_ru', 'author_tk', 'author_en', 'project')
+    form_extra_fields = {
+        'project': Select2Field(
+            _('Project'),
+            coerce=int,
+            widget=Select2Widget(),
+            validators=[validators.DataRequired()]
+        )
+    }
+
+    def create_form(self):
+        form = super().create_form()
+        with current_app.app_context():
+            from app.models.project import Project
+            form.project.choices = [(str(p.id), p.title_en, False, {}) for p in db.session.query(Project).all()]
+        return form
+
+    def edit_form(self, obj=None):
+        form = super().edit_form(obj)
+        with current_app.app_context():
+            from app.models.project import Project
+            projects = db.session.query(Project).all()
+            selected_project_id = str(obj.project_id) if obj and obj.project_id else None
+            form.project.choices = [
+                (str(p.id), p.title_en, str(p.id) == selected_project_id, {})
+                for p in projects
+            ]
+        return form
 
 class ContactAdminView(ModelAdminView):
     column_list = ('id', 'phone', 'address_ru', 'address_tk', 'address_en', 'email', 'social_media', 'created_at')
@@ -281,7 +325,7 @@ def create_app():
                     subtitle_ru='Мы IT-компания, специализирующаяся на маркетинге, брендинге и ERP-решениях',
                     subtitle_tk='Biz marketing, brending we ERP çözgütlerinde ýöriteleşen IT kompaniýasy',
                     subtitle_en='We are IT company specialising in Marketing, Branding design and ERP solutions',
-                    image_url='/static/images/banner.jpg',
+                    image_url='/static/uploads/banner.jpg',
                     button_text_ru='Посмотрите, что мы можем сделать',
                     button_text_tk='Biziň näme edip biljekdigimizi görüň',
                     button_text_en='See what we can do',
@@ -291,9 +335,9 @@ def create_app():
 
             categories = [
                 ('Дизайн брендинга', 'Brending dizaýny', 'Branding Design'),
-                ('ИТ-консультации', 'IT maslahat berişlik', 'IT Consulting'),
-                ('Решения для инженерных заводов', 'Zawod inženerçilik çözgütleri', 'Factory Engineering Solutions'),
-                ('Промышленные ИТ', 'Senagat IT', 'Industrial IT')
+                ('ИТ-консультации', 'IT maslahat berişlik', 'One'),
+                ('Решения для инженерных заводов', 'Zawod inženerçilik çözgütleri', 'Factory design'),
+                ('Промышленные продукты', 'Senagat önümleri', 'Industrial products')
             ]
             for name_ru, name_tk, name_en in categories:
                 if not Category.query.filter_by(name_en=name_en).first():
@@ -303,12 +347,12 @@ def create_app():
                 branding = Category.query.filter_by(name_en='Branding Design').first()
                 project = Project(
                     title_ru='Лампа Qwatt LED',
-                    title_tk='Qwatt LED çyrasy',
+                    title_tk='Qwatt LED-',
                     title_en='Qwatt LED Bulb',
                     description_ru='Брендинг Tagma сияет в идентичности Qwatt — яркий, смелый и вечный, как её светодиоды.',
                     description_tk='Tagmanyň brendingi Qwatt-yň şahsyýetinde ýalpyldawuk — ýagty, batyr we öçmejek, ýaly LED-ler.',
                     description_en="Tagma's Branding Shines Through In Qwatt's identity-Bright, Bold, And Timeless, Just Like its LEDs.",
-                    background_image_url='/static/images/qwatt_lamp.jpg',
+                    background_image_url='/static/uploads/qwatt_lamp.jpg',
                     button_text_ru='Посмотреть проект',
                     button_text_tk='Tasar görmek',
                     button_text_en='View project',
@@ -319,7 +363,7 @@ def create_app():
                 db.session.add(project)
 
             if not Project.query.filter_by(title_en='A Digital Transformation').first():
-                it_consulting = Category.query.filter_by(name_en='IT Consulting').first()
+                it_consulting = Category.query.filter_by(name_en='One').first()
                 deliverables = (
                     "Digital Discovery (Site Architecture/Site Map)\n"
                     "Wireframes\n"
@@ -339,7 +383,7 @@ def create_app():
                     description_ru='Работая с командой Ausbuild, мы гордимся тем, что достигли цели проекта...',
                     description_tk='Ausbuild topary bilen bilelikde, tasaryň maksadyna ýetendigimizden buýsanýarys...',
                     description_en="Working alongside the Ausbuild team, we are extremely proud to have delivered on the project goal...",
-                    background_image_url='/static/images/digital_transformation.jpg',
+                    background_image_url='/static/uploads/digital_transformation.jpg',
                     button_text_ru='Посмотреть проект',
                     button_text_tk='Tasar görmek',
                     button_text_en='View project',
@@ -375,7 +419,7 @@ def create_app():
                         title_en='Website and Interactive Masterplan',
                         date=datetime(2024, 6, 12),
                         read_time='3 min read',
-                        image_url=f'/static/images/masterplan{i}.jpg',
+                        image_url=f'/static/uploads/masterplan{i}.jpg',
                         link='/',
                         description_ru='Мы рады объявить о запуске Wallis Creek...',
                         description_tk='Wallis Creek-iň açylyşyndan buýsanýarys...',
@@ -385,7 +429,7 @@ def create_app():
                     db.session.add(blog)
 
             if not Client.query.first():
-                client = Client(logo_url='/static/images/hues.png')
+                client = Client(logo_url='/static/uploads/hues.png')
                 db.session.add(client)
 
             services = [
@@ -434,7 +478,7 @@ def create_app():
                     description2_ru="Основанная в 2015 году, мы стали надёжным партнёром...",
                     description2_tk="2015-nji ýylda esaslandyrylan, biz ynamdar hyzmatdaş bolduk...",
                     description2_en="Founded in 2015, we’ve grown into a trusted partner...",
-                    image_url="/static/images/about_office.jpg"
+                    image_url="/static/uploads/about_office.jpg"
                 )
                 db.session.add(about)
 
