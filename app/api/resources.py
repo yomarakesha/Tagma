@@ -1,17 +1,16 @@
 from flask_restful import Resource, reqparse, Api
 from flask import request, send_file, abort, Blueprint, current_app
-from app import db, create_app
+from app import db
 from app.models.banner import Banner
 from app.models.project import Project
 from app.models.blog import Blog
 from app.models.category import Category, project_category
 import io
-import subprocess
 import os
-import sys
 from werkzeug.utils import secure_filename
 from werkzeug.datastructures import FileStorage
 from datetime import datetime
+from fpdf import FPDF
 
 # Парсер для валидации данных Banner
 banner_parser = reqparse.RequestParser()
@@ -61,6 +60,10 @@ blog_parser.add_argument('link', type=str, default='/')
 # Парсер для загрузки изображения
 image_parser = reqparse.RequestParser()
 image_parser.add_argument('image', type=FileStorage, location='files', required=True, help='Image file is required')
+
+# Парсер для загрузки PDF
+pdf_parser = reqparse.RequestParser()
+pdf_parser.add_argument('pdf', type=FileStorage, location='files', required=True, help='PDF file is required')
 
 # Ресурс для Banner
 class BannerResource(Resource):
@@ -173,7 +176,7 @@ class ProjectResource(Resource):
         )
         db.session.add(new_project)
         db.session.commit()
-        return {'message': 'Project created successfully', 'id': new_banner.id}, 200
+        return {'message': 'Project created successfully', 'id': new_project.id}, 200
 
     def put(self, project_id):
         project = Project.query.get_or_404(project_id)
@@ -206,7 +209,7 @@ class BlogResource(Resource):
     def get(self, blog_id=None):
         locale = request.args.get('lang', 'en')
         page = request.args.get('page', 1, type=int)
-        per_page = min(request.args.get('per_page', 5, type=int), 50)  # Максимально 50 элементов
+        per_page = min(request.args.get('per_page', 5, type=int), 50)
 
         if blog_id:
             blog = Blog.query.get_or_404(blog_id)
@@ -276,112 +279,113 @@ class BlogResource(Resource):
         db.session.commit()
         return {'message': 'Blog post deleted successfully'}, 200
 
-# Новый ресурс для загрузки изображения
+# Ресурс для загрузки изображения
 class ImageUploadResource(Resource):
     def post(self):
         args = image_parser.parse_args()
         image_file = args['image']
 
-        # Проверка расширения файла
         if not allowed_file(image_file.filename):
             abort(400, description="Invalid file format. Allowed formats: png, jpg, jpeg, gif")
 
-        # Безопасное имя файла
         filename = secure_filename(image_file.filename)
         upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'images')
         if not os.path.exists(upload_dir):
             os.makedirs(upload_dir)
+            current_app.logger.info(f"Created directory: {upload_dir}")
 
-        # Сохранение файла
         file_path = os.path.join(upload_dir, filename)
-        image_file.save(file_path)
+        try:
+            image_file.save(file_path)
+            current_app.logger.info(f"Image saved at: {file_path}")
+        except Exception as e:
+            current_app.logger.error(f"Failed to save image at {file_path}: {str(e)}")
+            abort(500, description=f"Failed to save image: {str(e)}")
 
         return {'message': 'Image uploaded successfully', 'filename': filename}, 201
 
-# Новый ресурс для скачивания изображения
+# Ресурс для скачивания изображения
 class ImageDownloadResource(Resource):
     def get(self, filename):
         upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'images')
         file_path = os.path.join(upload_dir, filename)
         if os.path.exists(file_path):
-            return send_file(file_path, as_attachment=True, download_name=filename, mimetype='image/jpeg')  # MIME-type можно настроить
+            return send_file(file_path, as_attachment=True, download_name=filename, mimetype='image/jpeg')
         abort(404, description="Image not found")
 
-# Новый ресурс для скачивания PDF
+# Ресурс для загрузки PDF
+class ProjectPDFUploadResource(Resource):
+    def post(self, project_id):
+        project = Project.query.get_or_404(project_id)
+        args = pdf_parser.parse_args()
+        pdf_file = args['pdf']
+
+        if not pdf_file.filename.endswith('.pdf'):
+            abort(400, description="Invalid file format. Only PDF is allowed")
+
+        filename = secure_filename(pdf_file.filename)
+        pdf_dir = current_app.config['UPLOAD_FOLDER']
+        if not os.path.exists(pdf_dir):
+            os.makedirs(pdf_dir)
+            current_app.logger.info(f"Created directory: {pdf_dir}")
+
+        file_path = os.path.join(pdf_dir, filename)
+        try:
+            pdf_file.save(file_path)
+            current_app.logger.info(f"PDF saved at: {file_path}")
+        except Exception as e:
+            current_app.logger.error(f"Failed to save PDF at {file_path}: {str(e)}")
+            abort(500, description=f"Failed to save PDF: {str(e)}")
+
+        project.pdf_file = f'/static/uploads/{filename}'
+        db.session.commit()
+        current_app.logger.info(f"Updated project {project_id} with pdf_file: {project.pdf_file}")
+        return {'message': 'PDF uploaded successfully', 'filename': filename, 'pdf_path': project.pdf_file}, 201
+
+# Ресурс для скачивания PDF
 class ProjectPDFResource(Resource):
     def get(self, project_id):
         project = Project.query.get_or_404(project_id)
         
-        # Проверка доступности latexmk
-        latexmk_path = 'latexmk'  # По умолчанию предполагаем, что в PATH
-        if os.name == 'nt':  # Windows
-            # Попробуем найти latexmk в стандартной директории TeX Live
-            possible_paths = [
-                r'C:\texlive\2024\bin\win32\latexmk.exe',
-                r'C:\texlive\2023\bin\win32\latexmk.exe'
-            ]
-            for path in possible_paths:
-                if os.path.exists(path):
-                    latexmk_path = path
-                    break
-        
-        if not any(os.access(latexmk_path, os.X_OK) or os.path.exists(latexmk_path)):
-            abort(500, description="latexmk is not installed or not found in PATH. Please install TeX Live and add it to your system PATH.")
+        if project.pdf_file and os.path.exists(os.path.join(current_app.config['UPLOAD_FOLDER'], project.pdf_file.lstrip('/static/uploads'))):
+            return send_file(os.path.join(current_app.config['UPLOAD_FOLDER'], project.pdf_file.lstrip('/static/uploads')),
+                            as_attachment=True,
+                            download_name=os.path.basename(project.pdf_file),
+                            mimetype='application/pdf')
 
-        # Генерация LaTeX-кода
-        latex_content = f"""
-        \\documentclass[a4paper]{{article}}
-        \\usepackage[utf8]{{inputenc}}
-        \\usepackage[russian, turkmen, english]{{babel}}
-        \\usepackage{{geometry}}
-        \\geometry{{a4paper, margin=1in}}
-        \\usepackage{{graphicx}}
-
-        \\begin{{document}}
-
-        \\section*{{Project Details}}
-        \\selectlanguage{{english}}
-        \\textbf{{Title:}} {project.title_en}
-        \\selectlanguage{{russian}}
-        \\textbf{{Название:}} {project.title_ru}
-        \\selectlanguage{{turkmen}}
-        \\textbf{{At:}} {project.title_tk}
-
-        \\textbf{{Description (English):}} {project.description_en}
-        \\textbf{{Описание (Русский):}} {project.description_ru}
-        \\textbf{{Bellik (Türkmen):}} {project.description_tk}
-
-        \\textbf{{Categories:}}
-        \\begin{{itemize}}
-        {''.join([f'\\item {cat.name_en}' for cat in project.categories])}
-        \\end{{itemize}}
-
-        \\textbf{{Image URL:}} {project.background_image_url}
-
-        \\end{{document}}
-        """
-
-        # Сохранение LaTeX в временный файл
-        latex_file = io.StringIO()
-        latex_file.write(latex_content)
-        latex_file.seek(0)
-
-        # Генерация PDF с помощью latexmk
-        pdf_file = io.BytesIO()
+        pdf = FPDF()
+        pdf.add_page()
         try:
-            process = subprocess.run([latexmk_path, '-pdf', '-output-format=pdf', '-jobname=project_{project_id}'],
-                                  input=latex_file.read().encode(),
-                                  stdout=subprocess.PIPE,
-                                  stderr=subprocess.PIPE,
-                                  text=True,
-                                  check=True)
-            pdf_file.write(process.stdout.encode())
-        except subprocess.CalledProcessError as e:
-            abort(500, description=f"Failed to generate PDF: {e.stderr}")
-        except FileNotFoundError:
-            abort(500, description="latexmk executable not found. Ensure TeX Live is installed and PATH is configured.")
+            pdf.add_font('DejaVu', '', 'app/static/fonts/DejaVuSans.ttf', uni=True)
+            pdf.set_font('DejaVu', size=12)
+        except Exception as e:
+            pdf.set_font('Arial', size=12)
+            current_app.logger.error(f"Failed to load DejaVu font: {e}")
 
+        pdf.cell(200, 10, txt=f"Project Details - ID: {project_id}", ln=True, align="C")
+        pdf.ln(10)
+
+        pdf.cell(200, 10, txt=f"Title (English): {project.title_en}", ln=True)
+        pdf.cell(200, 10, txt=f"Название (Русский): {project.title_ru}", ln=True)
+        pdf.cell(200, 10, txt=f"At (Türkmen): {project.title_tk}", ln=True)
+        pdf.ln(10)
+
+        pdf.multi_cell(0, 10, txt=f"Description (English): {project.description_en}", align='L')
+        pdf.multi_cell(0, 10, txt=f"Описание (Русский): {project.description_ru}", align='L')
+        pdf.multi_cell(0, 10, txt=f"Bellik (Türkmen): {project.description_tk}", align='L')
+        pdf.ln(10)
+
+        pdf.cell(200, 10, txt="Categories:", ln=True)
+        for cat in project.categories:
+            pdf.cell(200, 10, txt=f"- {cat.name_en}", ln=True)
+        pdf.ln(10)
+
+        pdf.cell(200, 10, txt=f"Image URL: {project.background_image_url}", ln=True)
+
+        pdf_file = io.BytesIO()
+        pdf.output(pdf_file)
         pdf_file.seek(0)
+
         return send_file(pdf_file,
                         as_attachment=True,
                         download_name=f'project_{project_id}.pdf',
@@ -399,8 +403,9 @@ def init_api(app):
     api.add_resource(ProjectPDFResource, '/project/<int:project_id>/download-pdf')
     api.add_resource(ImageUploadResource, '/upload-image')
     api.add_resource(ImageDownloadResource, '/download-image/<string:filename>')
+    api.add_resource(ProjectPDFUploadResource, '/project/<int:project_id>/upload-pdf')
 
-# Функция для проверки разрешенных расширений (из __init__.py)
+# Функция для проверки разрешенных расширений
 def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS

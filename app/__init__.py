@@ -23,8 +23,7 @@ migrate = Migrate()
 babel = Babel()
 
 # Конфигурация загрузки файлов
-UPLOAD_FOLDER = 'app/static/uploads'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}  # Поддерживаемые расширения
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -53,59 +52,36 @@ class ModelAdminView(ModelView):
         try:
             return fn(self, *args, **kwargs)
         except Exception as e:
-            from flask import current_app
             current_app.logger.error(f"Error in view: {str(e)}")
             raise
-
-class BlogAdminView(ModelAdminView):
-    column_list = ('id', 'title_ru', 'title_tk', 'title_en', 'date', 'read_time', 'image_url', 'created_at')
-    form_columns = ('title_ru', 'title_tk', 'title_en', 'description_ru', 'description_tk', 'description_en', 'image_file', 'additional_images_files', 'date', 'read_time', 'link')
-    form_extra_fields = {
-        'image_file': FileUploadField(_('Main Image'), base_path=UPLOAD_FOLDER, allowed_extensions=ALLOWED_EXTENSIONS),
-        'additional_images_files': MultipleFileUploadField(_('Additional Images'), base_path=UPLOAD_FOLDER, allowed_extensions=ALLOWED_EXTENSIONS),
-        'description_ru': QuillTextAreaField(_('Description (Russian)')),
-        'description_tk': QuillTextAreaField(_('Description (Turkmen)')),
-        'description_en': QuillTextAreaField(_('Description (English)'))
-    }
-    form_widget_args = {
-        'description_ru': {'class': 'quill-editor'},
-        'description_tk': {'class': 'quill-editor'},
-        'description_en': {'class': 'quill-editor'}
-    }
-    edit_template = 'admin/blog_edit.html'
-
-    def on_model_change(self, form, model, is_created):
-        if form.image_file.data:
-            filename = secure_filename(form.image_file.data.filename)
-            file_path = os.path.join(UPLOAD_FOLDER, filename)
-            current_app.logger.info(f"Saving image to {file_path}")
-            form.image_file.data.save(file_path)
-            model.image_url = f'/static/uploads/{filename}'
-        if not model.image_url and is_created:
-            raise ValueError(_("Main image is required"))
 
 class BannerAdminView(ModelAdminView):
     column_list = ('id', 'title_ru', 'title_tk', 'title_en', 'image_url', 'button_text_ru', 'button_text_tk', 'button_text_en', 'created_at')
     form_columns = ('title_ru', 'title_tk', 'title_en', 'subtitle_ru', 'subtitle_tk', 'subtitle_en', 'image_file', 'button_text_ru', 'button_text_tk', 'button_text_en', 'button_link')
     form_extra_fields = {
-        'image_file': FileUploadField(_('Banner Image'), base_path=UPLOAD_FOLDER, allowed_extensions=ALLOWED_EXTENSIONS)
+        'image_file': FileUploadField(_('Banner Image'), base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS)
     }
 
     def on_model_change(self, form, model, is_created):
         if form.image_file.data:
             filename = secure_filename(form.image_file.data.filename)
-            file_path = os.path.join(UPLOAD_FOLDER, filename)
-            current_app.logger.info(f"Saving image to {file_path}")
-            form.image_file.data.save(file_path)
-            model.image_url = f'/static/uploads/{filename}'
+            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+            try:
+                form.image_file.data.save(file_path)
+                current_app.logger.info(f"Saved image to {file_path}")
+                model.image_url = f'/static/uploads/{filename}'
+            except Exception as e:
+                current_app.logger.error(f"Failed to save image to {file_path}: {str(e)}")
+                raise ValueError(f"Failed to save image: {str(e)}")
         if not model.image_url and is_created:
             raise ValueError(_("Banner image is required"))
 
 class ProjectAdminView(ModelAdminView):
-    column_list = ('id', 'title_ru', 'title_tk', 'title_en', 'background_image_url', 'button_text_ru', 'button_text_tk', 'button_text_en', 'created_at')
-    form_columns = ('title_ru', 'title_tk', 'title_en', 'description_ru', 'description_tk', 'description_en', 'background_image_file', 'button_text_ru', 'button_text_tk', 'button_text_en', 'button_link', 'deliverables_ru', 'deliverables_tk', 'deliverables_en', 'categories')
+    column_list = ('id', 'title_ru', 'title_tk', 'title_en', 'background_image_url', 'button_text_ru', 'button_text_tk', 'button_text_en', 'pdf_file', 'created_at')
+    form_columns = ('title_ru', 'title_tk', 'title_en', 'description_ru', 'description_tk', 'description_en', 'background_image_file', 'pdf_file', 'button_text_ru', 'button_text_tk', 'button_text_en', 'button_link', 'deliverables_ru', 'deliverables_tk', 'deliverables_en', 'categories')
     form_extra_fields = {
-        'background_image_file': FileUploadField(_('Background Image'), base_path=UPLOAD_FOLDER, allowed_extensions=ALLOWED_EXTENSIONS),
+        'background_image_file': FileUploadField(_('Background Image'), base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS),
+        'pdf_file': FileUploadField(_('PDF File'), base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions={'pdf'}),
         'description_ru': QuillTextAreaField(_('Description (Russian)')),
         'description_tk': QuillTextAreaField(_('Description (Turkmen)')),
         'description_en': QuillTextAreaField(_('Description (English)')),
@@ -126,51 +102,137 @@ class ProjectAdminView(ModelAdminView):
         'deliverables_tk': {'class': 'quill-editor'},
         'deliverables_en': {'class': 'quill-editor'}
     }
-    column_filters = ['categories.name_en']  # Добавлен фильтр по категории
+    column_filters = ['categories.name_en']
 
     def get_form(self):
-        return super().get_form()
+        form = super().get_form()
+        return form
 
     def create_form(self):
         form = super().create_form()
         from app.models.category import Category
         with current_app.app_context():
-            form.categories.choices = [(str(c.id), c.__str__()) for c in db.session.query(Category).all()]
+            categories = db.session.query(Category).all()
+            choices = [(str(c.id), c.name_en) for c in categories if c.id and c.name_en]
+            if not choices:
+                current_app.logger.error("No categories found. Seeding default categories.")
+                default_categories = [
+                    ('Дизайн брендинга', 'Brending dizaýny', 'Branding Design'),
+                    ('ИТ-консультации', 'IT maslahat berişlik', 'One')
+                ]
+                for name_ru, name_tk, name_en in default_categories:
+                    if not Category.query.filter_by(name_en=name_en).first():
+                        cat = Category(name_ru=name_ru, name_tk=name_tk, name_en=name_en)
+                        db.session.add(cat)
+                db.session.commit()
+                categories = db.session.query(Category).all()
+                choices = [(str(c.id), c.name_en) for c in categories if c.id and c.name_en]
+            form.categories.choices = choices
         return form
 
     def edit_form(self, obj=None):
         form = super().edit_form(obj)
         from app.models.category import Category
         with current_app.app_context():
-            form.categories.choices = [(str(c.id), c.__str__()) for c in db.session.query(Category).all()]
+            categories = db.session.query(Category).all()
+            choices = [(str(c.id), c.name_en) for c in categories if c.id and c.name_en]
+            if not choices:
+                current_app.logger.error("No categories found during edit.")
+                form.categories.choices = []
+            else:
+                form.categories.choices = choices
             if obj:
-                form.categories.data = [c.id for c in obj.categories]
+                form.categories.data = [c.id for c in obj.categories] if obj.categories else []
         return form
 
     def on_model_change(self, form, model, is_created):
-        if form.background_image_file.data:
+        current_app.logger.info(f"on_model_change called for model {model.id if model.id else 'new'}. Form data: {form.data}")
+        if 'background_image_file' in form.data and form.background_image_file.data:
             filename = secure_filename(form.background_image_file.data.filename)
-            file_path = os.path.join(UPLOAD_FOLDER, filename)
-            current_app.logger.info(f"Saving image to {file_path}")
-            form.background_image_file.data.save(file_path)
-            model.background_image_url = f'/static/uploads/{filename}'
+            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+            try:
+                form.background_image_file.data.save(file_path)
+                current_app.logger.info(f"Saved background image to {file_path}")
+                model.background_image_url = f'/static/uploads/{filename}'
+            except Exception as e:
+                current_app.logger.error(f"Failed to save background image: {str(e)}")
+                raise
+        if 'pdf_file' in form.data and form.pdf_file.data:
+            filename = secure_filename(form.pdf_file.data.filename)
+            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+            try:
+                form.pdf_file.data.save(file_path)
+                current_app.logger.info(f"Saved PDF to {file_path}")
+                model.pdf_file = f'/static/uploads/{filename}'
+            except Exception as e:
+                current_app.logger.error(f"Failed to save PDF: {str(e)}")
+                raise
         if not model.background_image_url and is_created:
             raise ValueError(_("Background image is required"))
+
+class BlogAdminView(ModelAdminView):
+    column_list = ('id', 'title_ru', 'title_tk', 'title_en', 'date', 'read_time', 'image_url', 'created_at')
+    form_columns = ('title_ru', 'title_tk', 'title_en', 'description_ru', 'description_tk', 'description_en', 'image_file', 'additional_images_files', 'date', 'read_time', 'link')
+    form_extra_fields = {
+        'image_file': FileUploadField(_('Main Image'), base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS),
+        'additional_images_files': MultipleFileUploadField(_('Additional Images'), base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS),
+        'description_ru': QuillTextAreaField(_('Description (Russian)')),
+        'description_tk': QuillTextAreaField(_('Description (Turkmen)')),
+        'description_en': QuillTextAreaField(_('Description (English)'))
+    }
+    form_widget_args = {
+        'description_ru': {'class': 'quill-editor'},
+        'description_tk': {'class': 'quill-editor'},
+        'description_en': {'class': 'quill-editor'}
+    }
+    edit_template = 'admin/blog_edit.html'
+
+    def on_model_change(self, form, model, is_created):
+        if form.image_file.data:
+            filename = secure_filename(form.image_file.data.filename)
+            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+            try:
+                form.image_file.data.save(file_path)
+                current_app.logger.info(f"Saved image to {file_path}")
+                model.image_url = f'/static/uploads/{filename}'
+            except Exception as e:
+                current_app.logger.error(f"Failed to save image to {file_path}: {str(e)}")
+                raise ValueError(f"Failed to save image: {str(e)}")
+        if form.additional_images_files.data:
+            for file in form.additional_images_files.data:
+                filename = secure_filename(file.filename)
+                file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+                try:
+                    file.save(file_path)
+                    current_app.logger.info(f"Saved additional image to {file_path}")
+                    if not model.additional_images:
+                        model.additional_images = f'/static/uploads/{filename}'
+                    else:
+                        model.additional_images += f',{filename}'
+                except Exception as e:
+                    current_app.logger.error(f"Failed to save additional image to {file_path}: {str(e)}")
+                    raise ValueError(f"Failed to save additional image: {str(e)}")
+        if not model.image_url and is_created:
+            raise ValueError(_("Main image is required"))
 
 class ClientAdminView(ModelAdminView):
     column_list = ('id', 'logo_url', 'created_at')
     form_columns = ('logo_file',)
     form_extra_fields = {
-        'logo_file': FileUploadField(_('Client Logo'), base_path=UPLOAD_FOLDER, allowed_extensions=ALLOWED_EXTENSIONS)
+        'logo_file': FileUploadField(_('Client Logo'), base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS)
     }
 
     def on_model_change(self, form, model, is_created):
         if form.logo_file.data:
             filename = secure_filename(form.logo_file.data.filename)
-            file_path = os.path.join(UPLOAD_FOLDER, filename)
-            current_app.logger.info(f"Saving image to {file_path}")
-            form.logo_file.data.save(file_path)
-            model.logo_url = f'/static/uploads/{filename}'
+            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+            try:
+                form.logo_file.data.save(file_path)
+                current_app.logger.info(f"Saved logo to {file_path}")
+                model.logo_url = f'/static/uploads/{filename}'
+            except Exception as e:
+                current_app.logger.error(f"Failed to save logo to {file_path}: {str(e)}")
+                raise ValueError(f"Failed to save logo: {str(e)}")
         if not model.logo_url and is_created:
             raise ValueError(_("Client logo is required"))
 
@@ -178,16 +240,20 @@ class AboutAdminView(ModelAdminView):
     column_list = ('id', 'title_ru', 'title_tk', 'title_en', 'image_url', 'created_at')
     form_columns = ('title_ru', 'title_tk', 'title_en', 'subtitle_ru', 'subtitle_tk', 'subtitle_en', 'description1_ru', 'description1_tk', 'description1_en', 'description2_ru', 'description2_tk', 'description2_en', 'image_file')
     form_extra_fields = {
-        'image_file': FileUploadField(_('Page Image'), base_path=UPLOAD_FOLDER, allowed_extensions=ALLOWED_EXTENSIONS)
+        'image_file': FileUploadField(_('Page Image'), base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS)
     }
 
     def on_model_change(self, form, model, is_created):
         if form.image_file.data:
             filename = secure_filename(form.image_file.data.filename)
-            file_path = os.path.join(UPLOAD_FOLDER, filename)
-            current_app.logger.info(f"Saving image to {file_path}")
-            form.image_file.data.save(file_path)
-            model.image_url = f'/static/uploads/{filename}'
+            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+            try:
+                form.image_file.data.save(file_path)
+                current_app.logger.info(f"Saved image to {file_path}")
+                model.image_url = f'/static/uploads/{filename}'
+            except Exception as e:
+                current_app.logger.error(f"Failed to save image to {file_path}: {str(e)}")
+                raise ValueError(f"Failed to save image: {str(e)}")
         if not model.image_url and is_created:
             raise ValueError(_("Page image is required"))
 
@@ -246,8 +312,6 @@ def get_locale_from_request():
         return request.accept_languages.best_match(['ru', 'tk', 'en'], default='en')
     return 'en'
 
-# ... (существующий код до create_app)
-
 def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = os.urandom(24).hex()
@@ -256,18 +320,22 @@ def create_app():
     app.config['SESSION_COOKIE_SECURE'] = False
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-    app.config['UPLOAD_FOLDER'] = 'app/static/uploads'  # Общая директория для загрузок
+    app.config['UPLOAD_FOLDER'] = os.path.abspath(os.path.join(os.path.dirname(__file__), 'static/uploads'))
     app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
     app.config['BABEL_DEFAULT_LOCALE'] = 'en'
     app.config['BABEL_DEFAULT_TIMEZONE'] = 'UTC'
     app.config['BABEL_TRANSLATION_DIRECTORIES'] = os.path.join(os.path.dirname(__file__), 'translations')
 
-    if not os.path.exists(app.config['UPLOAD_FOLDER']):
-        os.makedirs(app.config['UPLOAD_FOLDER'])
-    if not os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], 'images')):  # Создаём поддиректорию images
-        os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'images'))
+    # Убедимся, что папка для загрузки существует и доступна
+    upload_folder = app.config['UPLOAD_FOLDER']
+    if not os.path.exists(upload_folder):
+        os.makedirs(upload_folder)
+        current_app.logger.info(f"Created upload folder: {upload_folder}")
+    if not os.access(upload_folder, os.W_OK):
+        current_app.logger.error(f"No write permission for {upload_folder}. Granting full access.")
+        import stat
+        os.chmod(upload_folder, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
 
-    # ... (остальной код create_app)
     CORS(app, resources={r"/api/*": {"origins": "*"}, r"/static/*": {"origins": "*"}})
 
     db.init_app(app)
@@ -362,7 +430,8 @@ def create_app():
                     button_text_ru='Посмотреть проект',
                     button_text_tk='Tasar görmek',
                     button_text_en='View project',
-                    button_link='/project/qwatt'
+                    button_link='/project/qwatt',
+                    pdf_file=None  # Инициализируем как None
                 )
                 if branding:
                     project.categories.append(branding)
@@ -396,7 +465,8 @@ def create_app():
                     button_link='/project/digital',
                     deliverables_ru=deliverables,
                     deliverables_tk=deliverables,
-                    deliverables_en=deliverables
+                    deliverables_en=deliverables,
+                    pdf_file=None  # Инициализируем как None
                 )
                 if it_consulting:
                     project.categories.append(it_consulting)

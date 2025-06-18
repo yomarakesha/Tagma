@@ -2,6 +2,7 @@
 from flask_babel import get_locale
 from datetime import datetime
 from app.models.category import project_category, Category
+from flask import request
 
 class Project(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -21,9 +22,10 @@ class Project(db.Model):
     deliverables_en = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     categories = db.relationship('Category', secondary=project_category, backref=db.backref('projects', lazy='dynamic'))
+    pdf_file = db.Column(db.String(255))  # Добавляем поле для пути к PDF
 
     def to_dict(self):
-        locale = str(get_locale()) or 'en'
+        locale = str(get_locale()) or request.args.get('lang', 'en')
         return {
             'id': self.id,
             'title': getattr(self, f'title_{locale}', self.title_en),
@@ -33,5 +35,6 @@ class Project(db.Model):
             'button_link': self.button_link,
             'deliverables': getattr(self, f'deliverables_{locale}', self.deliverables_en),
             'categories': [category.to_dict() for category in self.categories],
-            'created_at': self.created_at.isoformat()
+            'created_at': self.created_at.isoformat(),
+            'pdf_file': self.pdf_file  # Добавляем PDF в ответ
         }
