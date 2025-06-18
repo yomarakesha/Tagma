@@ -101,3 +101,8 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for('main.login'))
+
+@main_bp.route('/project/<slug>')
+def project_detail(slug):
+    project = Project.query.filter_by(button_link=f'/project/{slug}').first_or_404()
+    return render_template('project.html', project=project)

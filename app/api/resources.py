@@ -1,10 +1,18 @@
-from flask_restful import Resource, reqparse
-from flask import request
-from app import db
+from flask_restful import Resource, reqparse, Api
+from flask import request, send_file, abort, Blueprint, current_app
+from app import db, create_app
 from app.models.banner import Banner
 from app.models.project import Project
 from app.models.blog import Blog
 from app.models.category import Category, project_category
+import io
+import subprocess
+import os
+import sys
+import uuid
+from werkzeug.utils import secure_filename
+from werkzeug.datastructures import FileStorage  # Добавлен импорт
+from datetime import datetime
 
 # Парсер для валидации данных Banner
 banner_parser = reqparse.RequestParser()
@@ -51,6 +59,10 @@ blog_parser.add_argument('date', type=str, required=True, help='Date is required
 blog_parser.add_argument('read_time', type=str, required=True, help='Read time is required')
 blog_parser.add_argument('link', type=str, default='/')
 
+# Парсер для загрузки секретного изображения
+image_parser = reqparse.RequestParser()
+image_parser.add_argument('image', type=FileStorage, location='files', required=True, help='Image file is required')
+
 # Ресурс для Banner
 class BannerResource(Resource):
     def get(self, banner_id=None):
@@ -81,7 +93,7 @@ class BannerResource(Resource):
         )
         db.session.add(new_banner)
         db.session.commit()
-        return {'message': 'Banner created successfully', 'id': new_banner.id}, '200'
+        return {'message': 'Banner created successfully', 'id': new_banner.id}, 200
 
     def put(self, banner_id):
         banner = Banner.query.get_or_404(banner_id)
@@ -98,13 +110,13 @@ class BannerResource(Resource):
         banner.button_text_en = args['button_text_en']
         banner.button_link = args['button_link']
         db.session.commit()
-        return {'message': 'Banner updated successfully'}, '200'
+        return {'message': 'Banner updated successfully'}, 200
 
     def delete(self, banner_id):
         banner = Banner.query.get_or_404(banner_id)
         db.session.delete(banner)
         db.session.commit()
-        return {'message': 'Banner deleted successfully'}, '200'
+        return {'message': 'Banner deleted successfully'}, 200
 
 # Ресурс для проекта
 class ProjectResource(Resource):
@@ -125,7 +137,7 @@ class ProjectResource(Resource):
         pagination = query.order_by(Project.created_at.desc()).paginate(
             page=page, per_page=per_page, error_out=False
         )
-        projects = pagination.items  # Убрали скобки, так как items — атрибут
+        projects = pagination.items
 
         return {
             'status': 'success',
@@ -141,6 +153,7 @@ class ProjectResource(Resource):
                 'prev_page': pagination.prev_num if pagination.has_prev else None
             }
         }
+
     def post(self):
         args = project_parser.parse_args()
         new_project = Project(
@@ -150,18 +163,18 @@ class ProjectResource(Resource):
             description_ru=args['description_ru'],
             description_tk=args['description_tk'],
             description_en=args['description_en'],
-            background_image_url=args['image_url'],
+            background_image_url=args['background_image_url'],
             button_text_ru=args['button_text_ru'],
             button_text_tk=args['button_text_tk'],
             button_text_en=args['button_text_en'],
-            button_link=args['link'],
+            button_link=args['button_link'],
             deliverables_ru=args['deliverables_ru'],
             deliverables_tk=args['deliverables_tk'],
             deliverables_en=args['deliverables_en']
         )
         db.session.add(new_project)
         db.session.commit()
-        return {'message': 'Project created successfully', 'id': new_project.id}, '200'
+        return {'message': 'Project created successfully', 'id': new_project.id}, 200
 
     def put(self, project_id):
         project = Project.query.get_or_404(project_id)
@@ -169,25 +182,25 @@ class ProjectResource(Resource):
         project.title_ru = args['title_ru']
         project.title_tk = args['title_tk']
         project.title_en = args['title_en']
-        project.description = args['description_ru']
+        project.description_ru = args['description_ru']
         project.description_tk = args['description_tk']
-        project.description =_en=args['description_en']
-        project.background_image_url = args['image_url']
+        project.description_en = args['description_en']
+        project.background_image_url = args['background_image_url']
         project.button_text_ru = args['button_text_ru']
         project.button_text_tk = args['button_text_tk']
         project.button_text_en = args['button_text_en']
-        project.button_link = args['link']
+        project.button_link = args['button_link']
         project.deliverables_ru = args['deliverables_ru']
         project.deliverables_tk = args['deliverables_tk']
         project.deliverables_en = args['deliverables_en']
         db.session.commit()
-        return {'message': 'Project updated successfully'}, '200'
+        return {'message': 'Project updated successfully'}, 200
 
     def delete(self, project_id):
         project = Project.query.get_or_404(project_id)
         db.session.delete(project)
         db.session.commit()
-        return {'message': 'Project deleted successfully'}, '200'
+        return {'message': 'Project deleted successfully'}, 200
 
 # Ресурс для Blog
 class BlogResource(Resource):
@@ -238,7 +251,7 @@ class BlogResource(Resource):
         )
         db.session.add(new_blog)
         db.session.commit()
-        return {'message': 'Blog post created successfully', 'id': new_blog.id}, '200'
+        return {'message': 'Blog post created successfully', 'id': new_blog.id}, 200
 
     def put(self, blog_id):
         from datetime import datetime
@@ -256,18 +269,142 @@ class BlogResource(Resource):
         blog.read_time = args['read_time']
         blog.link = args['link']
         db.session.commit()
-        return {'message': 'Blog post updated successfully'}, '200'
+        return {'message': 'Blog post updated successfully'}, 200
 
     def delete(self, blog_id):
         blog = Blog.query.get_or_404(blog_id)
         db.session.delete(blog)
         db.session.commit()
-        return {'message': 'Blog post deleted successfully'}, '200'
+        return {'message': 'Blog post deleted successfully'}, 200
+
+# Новый ресурс для загрузки секретного изображения
+class SecretImageUploadResource(Resource):
+    def post(self):
+        args = image_parser.parse_args()
+        image_file = args['image']
+
+        # Проверка расширения файла
+        if not allowed_file(image_file.filename):
+            abort(400, description="Invalid file format. Allowed formats: png, jpg, jpeg, gif")
+
+        # Генерация уникального ID и безопасного имени файла
+        image_id = str(uuid.uuid4())
+        filename = secure_filename(f"{image_id}_{image_file.filename}")
+        secret_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'secret_images')
+        if not os.path.exists(secret_dir):
+            os.makedirs(secret_dir)
+
+        # Сохранение файла
+        file_path = os.path.join(secret_dir, filename)
+        image_file.save(file_path)
+
+        return {'message': 'Image uploaded successfully', 'image_id': image_id}, 201
+
+# Новый ресурс для скачивания секретного изображения
+class SecretImageDownloadResource(Resource):
+    def get(self, image_id):
+        secret_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'secret_images')
+        for filename in os.listdir(secret_dir):
+            if filename.startswith(f"{image_id}_"):
+                file_path = os.path.join(secret_dir, filename)
+                if os.path.exists(file_path):
+                    return send_file(file_path, as_attachment=True, download_name=filename, mimetype='image/jpeg')  # MIME-type можно настроить
+        abort(404, description="Image not found")
+
+# Новый ресурс для скачивания PDF
+class ProjectPDFResource(Resource):
+    def get(self, project_id):
+        project = Project.query.get_or_404(project_id)
+        
+        # Проверка доступности latexmk
+        latexmk_path = 'latexmk'  # По умолчанию предполагаем, что в PATH
+        if os.name == 'nt':  # Windows
+            # Попробуем найти latexmk в стандартной директории TeX Live
+            possible_paths = [
+                r'C:\texlive\2024\bin\win32\latexmk.exe',
+                r'C:\texlive\2023\bin\win32\latexmk.exe'
+            ]
+            for path in possible_paths:
+                if os.path.exists(path):
+                    latexmk_path = path
+                    break
+        
+        if not any(os.access(latexmk_path, os.X_OK) or os.path.exists(latexmk_path)):
+            abort(500, description="latexmk is not installed or not found in PATH. Please install TeX Live and add it to your system PATH.")
+
+        # Генерация LaTeX-кода
+        latex_content = f"""
+        \\documentclass[a4paper]{{article}}
+        \\usepackage[utf8]{{inputenc}}
+        \\usepackage[russian, turkmen, english]{{babel}}
+        \\usepackage{{geometry}}
+        \\geometry{{a4paper, margin=1in}}
+        \\usepackage{{graphicx}}
+
+        \\begin{{document}}
+
+        \\section*{{Project Details}}
+        \\selectlanguage{{english}}
+        \\textbf{{Title:}} {project.title_en}
+        \\selectlanguage{{russian}}
+        \\textbf{{Название:}} {project.title_ru}
+        \\selectlanguage{{turkmen}}
+        \\textbf{{At:}} {project.title_tk}
+
+        \\textbf{{Description (English):}} {project.description_en}
+        \\textbf{{Описание (Русский):}} {project.description_ru}
+        \\textbf{{Bellik (Türkmen):}} {project.description_tk}
+
+        \\textbf{{Categories:}}
+        \\begin{{itemize}}
+        {''.join([f'\\item {cat.name_en}' for cat in project.categories])}
+        \\end{{itemize}}
+
+        \\textbf{{Image URL:}} {project.background_image_url}
+
+        \\end{{document}}
+        """
+
+        # Сохранение LaTeX в временный файл
+        latex_file = io.StringIO()
+        latex_file.write(latex_content)
+        latex_file.seek(0)
+
+        # Генерация PDF с помощью latexmk
+        pdf_file = io.BytesIO()
+        try:
+            process = subprocess.run([latexmk_path, '-pdf', '-output-format=pdf', '-jobname=project_{project_id}'],
+                                  input=latex_file.read().encode(),
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE,
+                                  text=True,
+                                  check=True)
+            pdf_file.write(process.stdout.encode())
+        except subprocess.CalledProcessError as e:
+            abort(500, description=f"Failed to generate PDF: {e.stderr}")
+        except FileNotFoundError:
+            abort(500, description="latexmk executable not found. Ensure TeX Live is installed and PATH is configured.")
+
+        pdf_file.seek(0)
+        return send_file(pdf_file,
+                        as_attachment=True,
+                        download_name=f'project_{project_id}.pdf',
+                        mimetype='application/pdf')
 
 # Регистрация ресурсов
 def init_api(app):
-    from app.api import api_bp, api
-    app.register_blueprint(api_bp, url_prefix='/api')
+    from flask_restful import Api
+    api_bp = Blueprint('api', __name__, url_prefix='/api')
+    api = Api(api_bp)
+    app.register_blueprint(api_bp)
     api.add_resource(BannerResource, '/banners', '/banners/<int:banner_id>')
     api.add_resource(ProjectResource, '/projects', '/projects/<int:project_id>')
     api.add_resource(BlogResource, '/blog', '/blog/<int:blog_id>')
+    api.add_resource(ProjectPDFResource, '/project/<int:project_id>/download-pdf')
+    api.add_resource(SecretImageUploadResource, '/upload-secret-image')
+    api.add_resource(SecretImageDownloadResource, '/download-secret-image/<string:image_id>')
+
+# Функция для проверки разрешенных расширений (из __init__.py)
+def allowed_file(filename):
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS

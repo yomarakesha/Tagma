@@ -126,6 +126,7 @@ class ProjectAdminView(ModelAdminView):
         'deliverables_tk': {'class': 'quill-editor'},
         'deliverables_en': {'class': 'quill-editor'}
     }
+    column_filters = ['categories.name_en']  # Добавлен фильтр по категории
 
     def get_form(self):
         return super().get_form()
@@ -148,10 +149,10 @@ class ProjectAdminView(ModelAdminView):
 
     def on_model_change(self, form, model, is_created):
         if form.background_image_file.data:
-            filename = secure_filename(form.image_file.data.filename)
+            filename = secure_filename(form.background_image_file.data.filename)
             file_path = os.path.join(UPLOAD_FOLDER, filename)
             current_app.logger.info(f"Saving image to {file_path}")
-            form.image_file.data.save(file_path)
+            form.background_image_file.data.save(file_path)
             model.background_image_url = f'/static/uploads/{filename}'
         if not model.background_image_url and is_created:
             raise ValueError(_("Background image is required"))
@@ -253,14 +254,17 @@ def create_app():
     app.config['SESSION_COOKIE_SECURE'] = False
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-    app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+    app.config['UPLOAD_FOLDER'] = 'app/static/uploads'  # Уже есть
+    app.config['SECRET_IMAGE_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], 'secret_images')  # Новая настройка
     app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
     app.config['BABEL_DEFAULT_LOCALE'] = 'en'
     app.config['BABEL_DEFAULT_TIMEZONE'] = 'UTC'
     app.config['BABEL_TRANSLATION_DIRECTORIES'] = os.path.join(os.path.dirname(__file__), 'translations')
 
-    if not os.path.exists(UPLOAD_FOLDER):
-        os.makedirs(UPLOAD_FOLDER)
+    if not os.path.exists(app.config['UPLOAD_FOLDER']):
+        os.makedirs(app.config['UPLOAD_FOLDER'])
+    if not os.path.exists(app.config['SECRET_IMAGE_FOLDER']):
+        os.makedirs(app.config['SECRET_IMAGE_FOLDER'])
 
     CORS(app, resources={r"/api/*": {"origins": "*"}, r"/static/*": {"origins": "*"}})
 
