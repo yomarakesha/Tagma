@@ -246,6 +246,8 @@ def get_locale_from_request():
         return request.accept_languages.best_match(['ru', 'tk', 'en'], default='en')
     return 'en'
 
+# ... (существующий код до create_app)
+
 def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = os.urandom(24).hex()
@@ -254,8 +256,7 @@ def create_app():
     app.config['SESSION_COOKIE_SECURE'] = False
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-    app.config['UPLOAD_FOLDER'] = 'app/static/uploads'  # Уже есть
-    app.config['SECRET_IMAGE_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], 'secret_images')  # Новая настройка
+    app.config['UPLOAD_FOLDER'] = 'app/static/uploads'  # Общая директория для загрузок
     app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
     app.config['BABEL_DEFAULT_LOCALE'] = 'en'
     app.config['BABEL_DEFAULT_TIMEZONE'] = 'UTC'
@@ -263,9 +264,10 @@ def create_app():
 
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
-    if not os.path.exists(app.config['SECRET_IMAGE_FOLDER']):
-        os.makedirs(app.config['SECRET_IMAGE_FOLDER'])
+    if not os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], 'images')):  # Создаём поддиректорию images
+        os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'images'))
 
+    # ... (остальной код create_app)
     CORS(app, resources={r"/api/*": {"origins": "*"}, r"/static/*": {"origins": "*"}})
 
     db.init_app(app)

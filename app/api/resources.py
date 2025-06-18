@@ -9,9 +9,8 @@ import io
 import subprocess
 import os
 import sys
-import uuid
 from werkzeug.utils import secure_filename
-from werkzeug.datastructures import FileStorage  # Добавлен импорт
+from werkzeug.datastructures import FileStorage
 from datetime import datetime
 
 # Парсер для валидации данных Banner
@@ -59,7 +58,7 @@ blog_parser.add_argument('date', type=str, required=True, help='Date is required
 blog_parser.add_argument('read_time', type=str, required=True, help='Read time is required')
 blog_parser.add_argument('link', type=str, default='/')
 
-# Парсер для загрузки секретного изображения
+# Парсер для загрузки изображения
 image_parser = reqparse.RequestParser()
 image_parser.add_argument('image', type=FileStorage, location='files', required=True, help='Image file is required')
 
@@ -174,7 +173,7 @@ class ProjectResource(Resource):
         )
         db.session.add(new_project)
         db.session.commit()
-        return {'message': 'Project created successfully', 'id': new_project.id}, 200
+        return {'message': 'Project created successfully', 'id': new_banner.id}, 200
 
     def put(self, project_id):
         project = Project.query.get_or_404(project_id)
@@ -277,8 +276,8 @@ class BlogResource(Resource):
         db.session.commit()
         return {'message': 'Blog post deleted successfully'}, 200
 
-# Новый ресурс для загрузки секретного изображения
-class SecretImageUploadResource(Resource):
+# Новый ресурс для загрузки изображения
+class ImageUploadResource(Resource):
     def post(self):
         args = image_parser.parse_args()
         image_file = args['image']
@@ -287,28 +286,25 @@ class SecretImageUploadResource(Resource):
         if not allowed_file(image_file.filename):
             abort(400, description="Invalid file format. Allowed formats: png, jpg, jpeg, gif")
 
-        # Генерация уникального ID и безопасного имени файла
-        image_id = str(uuid.uuid4())
-        filename = secure_filename(f"{image_id}_{image_file.filename}")
-        secret_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'secret_images')
-        if not os.path.exists(secret_dir):
-            os.makedirs(secret_dir)
+        # Безопасное имя файла
+        filename = secure_filename(image_file.filename)
+        upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'images')
+        if not os.path.exists(upload_dir):
+            os.makedirs(upload_dir)
 
         # Сохранение файла
-        file_path = os.path.join(secret_dir, filename)
+        file_path = os.path.join(upload_dir, filename)
         image_file.save(file_path)
 
-        return {'message': 'Image uploaded successfully', 'image_id': image_id}, 201
+        return {'message': 'Image uploaded successfully', 'filename': filename}, 201
 
-# Новый ресурс для скачивания секретного изображения
-class SecretImageDownloadResource(Resource):
-    def get(self, image_id):
-        secret_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'secret_images')
-        for filename in os.listdir(secret_dir):
-            if filename.startswith(f"{image_id}_"):
-                file_path = os.path.join(secret_dir, filename)
-                if os.path.exists(file_path):
-                    return send_file(file_path, as_attachment=True, download_name=filename, mimetype='image/jpeg')  # MIME-type можно настроить
+# Новый ресурс для скачивания изображения
+class ImageDownloadResource(Resource):
+    def get(self, filename):
+        upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'images')
+        file_path = os.path.join(upload_dir, filename)
+        if os.path.exists(file_path):
+            return send_file(file_path, as_attachment=True, download_name=filename, mimetype='image/jpeg')  # MIME-type можно настроить
         abort(404, description="Image not found")
 
 # Новый ресурс для скачивания PDF
@@ -401,8 +397,8 @@ def init_api(app):
     api.add_resource(ProjectResource, '/projects', '/projects/<int:project_id>')
     api.add_resource(BlogResource, '/blog', '/blog/<int:blog_id>')
     api.add_resource(ProjectPDFResource, '/project/<int:project_id>/download-pdf')
-    api.add_resource(SecretImageUploadResource, '/upload-secret-image')
-    api.add_resource(SecretImageDownloadResource, '/download-secret-image/<string:image_id>')
+    api.add_resource(ImageUploadResource, '/upload-image')
+    api.add_resource(ImageDownloadResource, '/download-image/<string:filename>')
 
 # Функция для проверки разрешенных расширений (из __init__.py)
 def allowed_file(filename):
