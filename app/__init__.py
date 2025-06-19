@@ -87,11 +87,12 @@ class ProjectAdminView(ModelAdminView):
         'description_en': QuillTextAreaField(_('Description (English)')),
         'deliverables_ru': QuillTextAreaField(_('Deliverables (Russian)')),
         'deliverables_tk': QuillTextAreaField(_('Deliverables (Turkmen)')),
-        'deliverables_en': QuillTextAreaField(_('Deliverables (English)')),
+        'deliverables_en': QuillTextAreaField(_('Description (English)')),
         'categories': SelectMultipleField(
             _('Categories'),
             coerce=int,
-            widget=Select2Widget(multiple=True)
+            widget=Select2Widget(multiple=True),
+            validators=[validators.Optional()]  # Поле необязательное
         )
     }
     form_widget_args = {
@@ -113,12 +114,13 @@ class ProjectAdminView(ModelAdminView):
         from app.models.category import Category
         with current_app.app_context():
             categories = db.session.query(Category).all()
-            choices = [(str(c.id), c.name_en) for c in categories if c.id and c.name_en]
+            choices = [(c.id, c.name_en) for c in categories if c.id and c.name_en]
+            current_app.logger.info(f"Create form categories choices: {choices}")
             if not choices:
-                current_app.logger.error("No categories found. Seeding default categories.")
+                current_app.logger.warning("No categories found. Seeding default categories.")
                 default_categories = [
                     ('Дизайн брендинга', 'Brending dizaýny', 'Branding Design'),
-                    ('ИТ-консультации', 'IT maslahat berişlik', 'One')
+                    ('ИТ-консультации', 'IT maslahat berişlik', 'IT Consulting')
                 ]
                 for name_ru, name_tk, name_en in default_categories:
                     if not Category.query.filter_by(name_en=name_en).first():
@@ -126,7 +128,7 @@ class ProjectAdminView(ModelAdminView):
                         db.session.add(cat)
                 db.session.commit()
                 categories = db.session.query(Category).all()
-                choices = [(str(c.id), c.name_en) for c in categories if c.id and c.name_en]
+                choices = [(c.id, c.name_en) for c in categories if c.id and c.name_en]
             form.categories.choices = choices
         return form
 
@@ -135,18 +137,87 @@ class ProjectAdminView(ModelAdminView):
         from app.models.category import Category
         with current_app.app_context():
             categories = db.session.query(Category).all()
-            choices = [(str(c.id), c.name_en) for c in categories if c.id and c.name_en]
+            choices = [(c.id, c.name_en) for c in categories if c.id and c.name_en]
+            current_app.logger.info(f"Edit form categories choices: {choices}")
             if not choices:
-                current_app.logger.error("No categories found during edit.")
-                form.categories.choices = []
-            else:
-                form.categories.choices = choices
+                current_app.logger.warning("No categories found during edit. Seeding default categories.")
+                default_categories = [
+                    ('Дизайн брендинга', 'Brending dizaýny', 'Branding Design'),
+                    ('ИТ-консультации', 'IT maslahat berişlik', 'IT Consulting')
+                ]
+                for name_ru, name_tk, name_en in default_categories:
+                    if not Category.query.filter_by(name_en=name_en).first():
+                        cat = Category(name_ru=name_ru, name_tk=name_tk, name_en=name_en)
+                        db.session.add(cat)
+                db.session.commit()
+                categories = db.session.query(Category).all()
+                choices = [(c.id, c.name_en) for c in categories if c.id and c.name_en]
+            form.categories.choices = choices
             if obj:
                 form.categories.data = [c.id for c in obj.categories] if obj.categories else []
+                current_app.logger.info(f"Current categories for project {obj.id}: {form.categories.data}")
         return form
+
+    def update_model(self, form, model):
+        try:
+            # Сохраняем данные формы вручную, исключая файлы
+            form_data = form.data
+            current_app.logger.info(f"Form data: {form_data}")
+            
+            # Обновляем текстовые поля модели вручную
+            model.title_ru = form_data.get('title_ru', model.title_ru)
+            model.title_tk = form_data.get('title_tk', model.title_tk)
+            model.title_en = form_data.get('title_en', model.title_en)
+            model.description_ru = form_data.get('description_ru', model.description_ru)
+            model.description_tk = form_data.get('description_tk', model.description_tk)
+            model.description_en = form_data.get('description_en', model.description_en)
+            model.button_text_ru = form_data.get('button_text_ru', model.button_text_ru)
+            model.button_text_tk = form_data.get('button_text_tk', model.button_text_tk)
+            model.button_text_en = form_data.get('button_text_en', model.button_text_en)
+            model.button_link = form_data.get('button_link', model.button_link)
+            model.deliverables_ru = form_data.get('deliverables_ru', model.deliverables_ru)
+            model.deliverables_tk = form_data.get('deliverables_tk', model.deliverables_tk)
+            model.deliverables_en = form_data.get('deliverables_en', model.deliverables_en)
+
+            # Обновляем категории вручную
+            from app.models.category import Category
+            selected_category_ids = form_data.get('categories', [])
+            if selected_category_ids and not isinstance(selected_category_ids, (list, tuple)):
+                selected_category_ids = [selected_category_ids]
+            selected_category_ids = [int(id) for id in selected_category_ids if id]
+            current_app.logger.info(f"Selected category IDs: {selected_category_ids}")
+            
+            model.categories.clear()  # Очищаем текущее отношение
+            if selected_category_ids:
+                selected_categories = Category.query.filter(Category.id.in_(selected_category_ids)).all()
+                for category in selected_categories:
+                    model.categories.append(category)  # Добавляем объекты Category
+                current_app.logger.info(f"Assigned categories to model: {[c.name_en for c in model.categories]}")
+            else:
+                model.categories = []  # Явно устанавливаем пустой список
+                current_app.logger.info("No categories selected, cleared model categories")
+
+            self.on_model_change(form, model, False)
+            db.session.commit()
+            current_app.logger.info("Changes committed successfully")
+            return True
+        except Exception as ex:
+            current_app.logger.error(f"Failed to update model: {str(ex)}")
+            db.session.rollback()
+            if not self.handle_view_exception(ex):
+                raise
+            return False
 
     def on_model_change(self, form, model, is_created):
         current_app.logger.info(f"on_model_change called for model {model.id if model.id else 'new'}. Form data: {form.data}")
+        current_app.logger.info(f"Upload folder path: {current_app.config['UPLOAD_FOLDER']}")
+        if not os.path.exists(current_app.config['UPLOAD_FOLDER']):
+            current_app.logger.error(f"Upload folder does not exist: {current_app.config['UPLOAD_FOLDER']}")
+            raise ValueError(f"Upload folder does not exist: {current_app.config['UPLOAD_FOLDER']}")
+        if not os.access(current_app.config['UPLOAD_FOLDER'], os.W_OK):
+            current_app.logger.error(f"No write permission for upload folder: {current_app.config['UPLOAD_FOLDER']}")
+            raise ValueError(f"No write permission for upload folder: {current_app.config['UPLOAD_FOLDER']}")
+
         if 'background_image_file' in form.data and form.background_image_file.data:
             filename = secure_filename(form.background_image_file.data.filename)
             file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
@@ -155,9 +226,11 @@ class ProjectAdminView(ModelAdminView):
                 current_app.logger.info(f"Saved background image to {file_path}")
                 model.background_image_url = f'/static/uploads/{filename}'
             except Exception as e:
-                current_app.logger.error(f"Failed to save background image: {str(e)}")
-                raise
+                current_app.logger.error(f"Failed to save background image to {file_path}: {str(e)}")
+                raise ValueError(f"Failed to save background image: {str(e)}")
+
         if 'pdf_file' in form.data and form.pdf_file.data:
+            current_app.logger.info(f"PDF file in form data: {form.pdf_file.data}")
             filename = secure_filename(form.pdf_file.data.filename)
             file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
             try:
@@ -165,8 +238,9 @@ class ProjectAdminView(ModelAdminView):
                 current_app.logger.info(f"Saved PDF to {file_path}")
                 model.pdf_file = f'/static/uploads/{filename}'
             except Exception as e:
-                current_app.logger.error(f"Failed to save PDF: {str(e)}")
-                raise
+                current_app.logger.error(f"Failed to save PDF to {file_path}: {str(e)}")
+                raise ValueError(f"Failed to save PDF: {str(e)}")
+
         if not model.background_image_url and is_created:
             raise ValueError(_("Background image is required"))
 
@@ -285,7 +359,7 @@ class ReviewAdminView(ModelAdminView):
         form = super().create_form()
         with current_app.app_context():
             from app.models.project import Project
-            form.project.choices = [(str(p.id), p.title_en, False, {}) for p in db.session.query(Project).all()]
+            form.project.choices = [(p.id, p.title_en) for p in db.session.query(Project).all()]
         return form
 
     def edit_form(self, obj=None):
@@ -293,11 +367,7 @@ class ReviewAdminView(ModelAdminView):
         with current_app.app_context():
             from app.models.project import Project
             projects = db.session.query(Project).all()
-            selected_project_id = str(obj.project_id) if obj and obj.project_id else None
-            form.project.choices = [
-                (str(p.id), p.title_en, str(p.id) == selected_project_id, {})
-                for p in projects
-            ]
+            form.project.choices = [(p.id, p.title_en) for p in projects]
         return form
 
 class ContactAdminView(ModelAdminView):
@@ -332,7 +402,7 @@ def create_app():
         os.makedirs(upload_folder)
         current_app.logger.info(f"Created upload folder: {upload_folder}")
     if not os.access(upload_folder, os.W_OK):
-        current_app.logger.error(f"No write permission for {upload_folder}. Granting full access.")
+        current_app.logger.error(f"No write permission for {upload_folder}. Attempting to grant access.")
         import stat
         os.chmod(upload_folder, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
 
@@ -409,7 +479,7 @@ def create_app():
 
             categories = [
                 ('Дизайн брендинга', 'Brending dizaýny', 'Branding Design'),
-                ('ИТ-консультации', 'IT maslahat berişlik', 'One'),
+                ('ИТ-консультации', 'IT maslahat berişlik', 'IT Consulting'),
                 ('Решения для инженерных заводов', 'Zawod inženerçilik çözgütleri', 'Factory design'),
                 ('Промышленные продукты', 'Senagat önümleri', 'Industrial products')
             ]
@@ -431,14 +501,14 @@ def create_app():
                     button_text_tk='Tasar görmek',
                     button_text_en='View project',
                     button_link='/project/qwatt',
-                    pdf_file=None  # Инициализируем как None
+                    pdf_file=None
                 )
                 if branding:
                     project.categories.append(branding)
                 db.session.add(project)
 
             if not Project.query.filter_by(title_en='A Digital Transformation').first():
-                it_consulting = Category.query.filter_by(name_en='One').first()
+                it_consulting = Category.query.filter_by(name_en='IT Consulting').first()
                 deliverables = (
                     "Digital Discovery (Site Architecture/Site Map)\n"
                     "Wireframes\n"
@@ -466,7 +536,7 @@ def create_app():
                     deliverables_ru=deliverables,
                     deliverables_tk=deliverables,
                     deliverables_en=deliverables,
-                    pdf_file=None  # Инициализируем как None
+                    pdf_file=None
                 )
                 if it_consulting:
                     project.categories.append(it_consulting)
@@ -561,7 +631,7 @@ def create_app():
             db.session.commit()
 
         except OperationalError as e:
-            print(f"Skipping seeding due to schema mismatch: {e}")
+            current_app.logger.error(f"Skipping seeding due to schema mismatch: {str(e)}")
             db.session.rollback()
 
     return app
