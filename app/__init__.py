@@ -347,9 +347,19 @@ class ClientAdminView(ModelAdminView):
 
 class AboutAdminView(ModelAdminView):
     column_list = ('id', 'title_ru', 'title_tk', 'title_en', 'image_url', 'created_at')
-    form_columns = ('title_ru', 'title_tk', 'title_en', 'subtitle_ru', 'subtitle_tk', 'subtitle_en', 'description1_ru', 'description1_tk', 'description1_en', 'description2_ru', 'description2_tk', 'description2_en', 'image_file')
+    form_columns = (
+        'title_ru', 'title_tk', 'title_en',
+        'subtitle_ru', 'subtitle_tk', 'subtitle_en',
+        'description1_ru', 'description1_tk', 'description1_en',
+        'description2_ru', 'description2_tk', 'description2_en',
+        'image_file'
+    )
     form_extra_fields = {
-        'image_file': FileUploadField(_('Page Image'), base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS)
+        'image_file': FileUploadField(
+            _('Page Image'),
+            base_path=lambda: current_app.config['UPLOAD_FOLDER'],
+            allowed_extensions=ALLOWED_EXTENSIONS
+        )
     }
 
     def on_model_change(self, form, model, is_created):
@@ -370,7 +380,6 @@ class AboutAdminView(ModelAdminView):
                 raise ValueError(f"Failed to save image: {str(e)}")
         if not model.image_url and is_created:
             raise ValueError(_("Page image is required"))
-
 class UserAdminView(ModelAdminView):
     column_list = ('id', 'username', 'email', 'is_admin', 'created_at')
     form_columns = ('username', 'email', 'is_admin')
