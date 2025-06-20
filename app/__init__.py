@@ -352,11 +352,21 @@ class AboutAdminView(ModelAdminView):
         'subtitle_ru', 'subtitle_tk', 'subtitle_en',
         'description1_ru', 'description1_tk', 'description1_en',
         'description2_ru', 'description2_tk', 'description2_en',
-        'image_file'
+        'address', 'image_file', 'logo_file', 'image_file2'
     )
     form_extra_fields = {
         'image_file': FileUploadField(
             _('Изображение страницы'),
+            base_path=lambda: current_app.config['UPLOAD_FOLDER'],
+            allowed_extensions=ALLOWED_EXTENSIONS
+        ),
+        'logo_file': FileUploadField(
+            _('Логотип'),
+            base_path=lambda: current_app.config['UPLOAD_FOLDER'],
+            allowed_extensions=ALLOWED_EXTENSIONS
+        ),
+        'image_file2': FileUploadField(
+            _('Дополнительное изображение'),
             base_path=lambda: current_app.config['UPLOAD_FOLDER'],
             allowed_extensions=ALLOWED_EXTENSIONS
         )
@@ -378,6 +388,31 @@ class AboutAdminView(ModelAdminView):
             except Exception as e:
                 current_app.logger.error(f"Не удалось сохранить изображение в {file_path}: {str(e)}")
                 raise ValueError(f"Не удалось сохранить изображение: {str(e)}")
+
+        if form.logo_file.data:
+            filename = secure_filename(form.logo_file.data.filename)
+            file_path = os.path.join(upload_folder, filename)
+            current_app.logger.info(f"Попытка сохранить логотип в: {file_path}")
+            try:
+                form.logo_file.data.save(file_path)
+                current_app.logger.info(f"Логотип сохранён в {file_path}")
+                model.logo_url = f'/Uploads/{filename}'
+            except Exception as e:
+                current_app.logger.error(f"Не удалось сохранить логотип в {file_path}: {str(e)}")
+                raise ValueError(f"Не удалось сохранить логотип: {str(e)}")
+
+        if form.image_file2.data:
+            filename = secure_filename(form.image_file2.data.filename)
+            file_path = os.path.join(upload_folder, filename)
+            current_app.logger.info(f"Попытка сохранить дополнительное изображение в: {file_path}")
+            try:
+                form.image_file2.data.save(file_path)
+                current_app.logger.info(f"Дополнительное изображение сохранено в {file_path}")
+                model.image_url2 = f'/Uploads/{filename}'
+            except Exception as e:
+                current_app.logger.error(f"Не удалось сохранить дополнительное изображение в {file_path}: {str(e)}")
+                raise ValueError(f"Не удалось сохранить дополнительное изображение: {str(e)}")
+
         if not model.image_url and is_created:
             raise ValueError(_("Изображение страницы обязательно"))
 
@@ -721,7 +756,10 @@ def create_app():
                     description2_ru="Основанная в 2015 году, мы стали надёжным партнёром...",
                     description2_tk="2015-nji ýylda esaslandyrylan, biz ynamdar hyzmatdaş bolduk...",
                     description2_en="Founded in 2015, we’ve grown into a trusted partner...",
-                    image_url="/Uploads/about_office.jpg"
+                    image_url="/Uploads/about_office.jpg",
+                    address="Ashgabat, Turkmenistan",
+                    logo_url="/Uploads/tagma_logo.png",
+                    image_url2="/Uploads/about_team.jpg"
                 )
                 db.session.add(about)
 

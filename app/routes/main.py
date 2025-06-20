@@ -28,7 +28,7 @@ def get_banners():
     banners = Banner.query.all()
     return jsonify({
         'status': 'success',
-        'data': [banner.to_dict() for banner in banners]
+        'data': [banner.to_dict() for banner in banners()]
     })
 
 @main_bp.route('/api/clients')
@@ -41,9 +41,9 @@ def get_clients():
 
 @main_bp.route('/api/categories')
 def get_categories():
-    categories = Category.query.all()
+    categories = Project.query.all()
     return jsonify({
-        'status': 'success',
+        'categories': 'success',
         'data': [category.to_dict() for category in categories]
     })
 
@@ -106,3 +106,11 @@ def logout():
 def project_detail(slug):
     project = Project.query.filter_by(button_link=f'/project/{slug}').first_or_404()
     return render_template('project.html', project=project)
+
+@main_bp.route('/about')
+def about():
+    about = About.query.first()
+    if not about:
+        flash(_('No about information found'))
+        return redirect(url_for('main.index'))
+    return render_template('about.html', about=about, title=_('About Us'))

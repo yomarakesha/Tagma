@@ -17,6 +17,9 @@ class About(db.Model):
     description2_tk = db.Column(db.Text)
     description2_en = db.Column(db.Text)
     image_url = db.Column(db.String(255))
+    address = db.Column(db.String(255))  # Новое поле
+    logo_url = db.Column(db.String(255))  # Новое поле
+    image_url2 = db.Column(db.String(255))  # Новое поле
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
@@ -28,5 +31,8 @@ class About(db.Model):
             'description1': getattr(self, f'description1_{locale}', self.description1_en),
             'description2': getattr(self, f'description2_{locale}', self.description2_en),
             'image_url': self.image_url,
+            'address': self.address,
+            'logo_url': self.logo_url,
+            'image_url2': self.image_url2,
             'created_at': self.created_at.isoformat()
         }
