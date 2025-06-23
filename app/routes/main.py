@@ -28,7 +28,7 @@ def get_banners():
     banners = Banner.query.all()
     return jsonify({
         'status': 'success',
-        'data': [banner.to_dict() for banner in banners()]
+        'data': [banner.to_dict() for banner in banners]
     })
 
 @main_bp.route('/api/clients')
