@@ -34,8 +34,7 @@ def allowed_file(filename):
 
 # Кастомное поле для Quill Editor
 class QuillTextAreaField(TextAreaField):
-    def __init__(self, label=None, validators=None, **kwargs):
-        super(QuillTextAreaField, self).__init__(label, validators, **kwargs)
+    pass
 
 class MyAdminIndexView(AdminIndexView):
     def is_accessible(self):

@@ -1,6 +1,7 @@
 from app import db
 from flask_babel import get_locale
 from datetime import datetime
+from app.models.project import Project
 
 class Blog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -16,6 +17,8 @@ class Blog(db.Model):
     read_time = db.Column(db.String(50))
     link = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'))
+    project = db.relationship('Project', backref='blogs')
 
     def to_dict(self):
         locale = str(get_locale()) or 'en'
@@ -28,5 +31,6 @@ class Blog(db.Model):
             'date': self.date.isoformat() if self.date else None,
             'read_time': self.read_time,
             'link': self.link,
-            'created_at': self.created_at.isoformat()
+            'created_at': self.created_at.isoformat(),
+            'project': self.project.to_dict() if self.project else None
         }
