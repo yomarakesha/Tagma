@@ -14,7 +14,7 @@ from sqlalchemy.exc import OperationalError
 from werkzeug.utils import secure_filename
 from app.utils.file_upload import FileUploadField, MultipleFileUploadField
 from wtforms import TextAreaField
-from wtforms.fields import SelectMultipleField
+from wtforms.fields import SelectMultipleField, PasswordField
 from wtforms import validators
 from flask import current_app
 import errno
@@ -417,8 +417,18 @@ class AboutAdminView(ModelAdminView):
             raise ValueError(_("Изображение страницы обязательно"))
 
 class UserAdminView(ModelAdminView):
-    column_list = ('id', 'username', 'email', 'is_admin', 'created_at')
-    form_columns = ('username', 'email', 'is_admin')
+    column_list = ('id', 'username', 'is_admin', 'created_at')
+    form_columns = ('username', 'password', 'is_admin')
+
+    form_extra_fields = {
+        'password': PasswordField('Пароль')
+    }
+
+    def on_model_change(self, form, model, is_created):
+        if form.password.data:
+            model.set_password(form.password.data)
+        elif is_created:
+            raise ValueError("Пароль обязателен для нового пользователя")
 
 class CategoryAdminView(ModelAdminView):
     column_list = ('id', 'name_ru', 'name_tk', 'name_en', 'created_at')
@@ -562,6 +572,8 @@ def create_app():
     from app.models.review import Review
     from app.models.contact import Contact
     from app.models.about import About
+    from app.models.contact_request import ContactRequest
+    from app.models.partner import Partner
 
     admin.add_view(UserAdminView(User, db.session))
     admin.add_view(BannerAdminView(Banner, db.session))
@@ -573,6 +585,8 @@ def create_app():
     admin.add_view(ReviewAdminView(Review, db.session))
     admin.add_view(ContactAdminView(Contact, db.session))
     admin.add_view(AboutAdminView(About, db.session))
+    admin.add_view(ModelAdminView(ContactRequest, db.session, name="Contact Requests"))
+    admin.add_view(ModelAdminView(Partner, db.session, name="Partners"))
 
     with app.app_context():
         admin.add_link(MenuLink(name=_('Выход'), url='/logout'))
