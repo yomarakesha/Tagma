@@ -208,3 +208,19 @@ def get_partners():
             } for p in partners
         ]
     })
+
+@main_bp.route('/blogs', methods=['GET'])
+def blogs_list():
+    search = request.args.get('search', '').strip()
+    query = Blog.query
+    if search:
+        query = query.filter(
+            (Blog.title_ru.ilike(f'%{search}%')) |
+            (Blog.title_en.ilike(f'%{search}%')) |
+            (Blog.title_tk.ilike(f'%{search}%'))
+        )
+    blogs = query.order_by(Blog.created_at.desc()).all()
+    return jsonify({
+        'status': 'success',
+        'data': [blog.to_dict() for blog in blogs]
+    })
