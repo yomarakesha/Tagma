@@ -19,6 +19,10 @@ from app.models.partner import Partner
 main_bp = Blueprint('main', __name__)
 
 @main_bp.route('/')
+def root_redirect():
+    return redirect('/admin')
+
+@main_bp.route('/')
 @main_bp.route('/index')
 def index():
     banners = Banner.query.all()

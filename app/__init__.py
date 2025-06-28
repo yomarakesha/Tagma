@@ -8,6 +8,7 @@ from flask_admin.menu import MenuLink
 from flask_migrate import Migrate
 from flask_cors import CORS
 from flask_babel import Babel, _, get_locale
+from flask_ckeditor import CKEditor, CKEditorField
 import os
 from datetime import datetime
 from sqlalchemy.exc import OperationalError
@@ -25,6 +26,7 @@ import tempfile
 db = SQLAlchemy()
 migrate = Migrate()
 babel = Babel()
+ckeditor = CKEditor()
 
 # Конфигурация загрузки файлов
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
@@ -110,12 +112,12 @@ class ProjectAdminView(ModelAdminView):
     form_extra_fields = {
         'background_image_file': FileUploadField(_('Фоновое изображение'), base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS),
         'pdf_file': FileUploadField(_('PDF-файл'), base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions={'pdf'}),
-        'description_ru': QuillTextAreaField(_('Описание (Русский)')),
-        'description_tk': QuillTextAreaField(_('Описание (Туркменский)')),
-        'description_en': QuillTextAreaField(_('Описание (Английский)')),
-        'deliverables_ru': QuillTextAreaField(_('Доставляемое (Русский)')),
-        'deliverables_tk': QuillTextAreaField(_('Доставляемое (Туркменский)')),
-        'deliverables_en': QuillTextAreaField(_('Доставляемое (Английский)')),
+        'description_ru': CKEditorField(_('Описание (Русский)')),
+        'description_tk': CKEditorField(_('Описание (Туркменский)')),
+        'description_en': CKEditorField(_('Описание (Английский)')),
+        'deliverables_ru': CKEditorField(_('Доставляемое (Русский)')),
+        'deliverables_tk': CKEditorField(_('Доставляемое (Туркменский)')),
+        'deliverables_en': CKEditorField(_('Доставляемое (Английский)')),
         'categories': SelectMultipleField(
             _('Категории'),
             coerce=int,
@@ -268,9 +270,9 @@ class BlogAdminView(ModelAdminView):
     form_extra_fields = {
         'image_file': FileUploadField(_('Основное изображение'), base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS),
         'additional_images_files': MultipleFileUploadField(_('Дополнительные изображения'), base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS),
-        'description_ru': QuillTextAreaField(_('Описание (Русский)')),
-        'description_tk': QuillTextAreaField(_('Описание (Туркменский)')),
-        'description_en': QuillTextAreaField(_('Описание (Английский)'))
+        'description_ru': CKEditorField(_('Описание (Русский)')),
+        'description_tk': CKEditorField(_('Описание (Туркменский)')),
+        'description_en': CKEditorField(_('Описание (Английский)'))
     }
     form_widget_args = {
         'description_ru': {'class': 'quill-editor'},
@@ -368,7 +370,21 @@ class AboutAdminView(ModelAdminView):
             _('Дополнительное изображение'),
             base_path=lambda: current_app.config['UPLOAD_FOLDER'],
             allowed_extensions=ALLOWED_EXTENSIONS
-        )
+        ),
+        'description1_ru': CKEditorField(_('Описание 1 (Русский)')),
+        'description1_tk': CKEditorField(_('Описание 1 (Туркменский)')),
+        'description1_en': CKEditorField(_('Описание 1 (Английский)')),
+        'description2_ru': CKEditorField(_('Описание 2 (Русский)')),
+        'description2_tk': CKEditorField(_('Описание 2 (Туркменский)')),
+        'description2_en': CKEditorField(_('Описание 2 (Английский)')),
+    }
+    form_widget_args = {
+        'description1_ru': {'class': 'quill-editor'},
+        'description1_tk': {'class': 'quill-editor'},
+        'description1_en': {'class': 'quill-editor'},
+        'description2_ru': {'class': 'quill-editor'},
+        'description2_tk': {'class': 'quill-editor'},
+        'description2_en': {'class': 'quill-editor'},
     }
 
     def on_model_change(self, form, model, is_created):
@@ -436,17 +452,35 @@ class CategoryAdminView(ModelAdminView):
 class ServiceAdminView(ModelAdminView):
     column_list = ('id', 'title_ru', 'title_tk', 'title_en', 'button_text_ru', 'button_text_tk', 'button_text_en', 'created_at')
     form_columns = ('title_ru', 'title_tk', 'title_en', 'subtitles_ru', 'subtitles_tk', 'subtitles_en', 'button_text_ru', 'button_text_tk', 'button_text_en', 'button_link')
+    form_extra_fields = {
+        'subtitles_ru': CKEditorField(_('Описание (Русский)')),
+        'subtitles_tk': CKEditorField(_('Описание (Туркменский)')),
+        'subtitles_en': CKEditorField(_('Описание (Английский)')),
+    }
+    form_widget_args = {
+        'subtitles_ru': {'class': 'quill-editor'},
+        'subtitles_tk': {'class': 'quill-editor'},
+        'subtitles_en': {'class': 'quill-editor'},
+    }
 
 class ReviewAdminView(ModelAdminView):
     column_list = ('id', 'content_ru', 'content_tk', 'content_en', 'author_ru', 'author_tk', 'author_en', 'project_id', 'created_at')
     form_columns = ('content_ru', 'content_tk', 'content_en', 'author_ru', 'author_tk', 'author_en', 'project')
     form_extra_fields = {
+        'content_ru': CKEditorField(_('Отзыв (Русский)')),
+        'content_tk': CKEditorField(_('Отзыв (Туркменский)')),
+        'content_en': CKEditorField(_('Отзыв (Английский)')),
         'project': Select2Field(
             _('Проект'),
             coerce=int,
             widget=Select2Widget(),
             validators=[validators.DataRequired()]
         )
+    }
+    form_widget_args = {
+        'content_ru': {'class': 'quill-editor'},
+        'content_tk': {'class': 'quill-editor'},
+        'content_en': {'class': 'quill-editor'},
     }
 
     def get_form(self):
@@ -546,6 +580,7 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
     babel.init_app(app, locale_selector=get_locale_from_request)
+    ckeditor.init_app(app)
 
     app.jinja_env.globals.update(get_locale=get_locale)
 
@@ -787,4 +822,3 @@ def create_app():
 
 if __name__ == '__main__':
     app = create_app()
-    app.run(debug=True)
