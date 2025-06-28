@@ -451,11 +451,20 @@ class CategoryAdminView(ModelAdminView):
 
 class ServiceAdminView(ModelAdminView):
     column_list = ('id', 'title_ru', 'title_tk', 'title_en', 'button_text_ru', 'button_text_tk', 'button_text_en', 'created_at')
-    form_columns = ('title_ru', 'title_tk', 'title_en', 'subtitles_ru', 'subtitles_tk', 'subtitles_en', 'button_text_ru', 'button_text_tk', 'button_text_en', 'button_link')
+    form_columns = (
+        'title_ru', 'title_tk', 'title_en',
+        'subtitles_ru', 'subtitles_tk', 'subtitles_en',
+        'button_text_ru', 'button_text_tk', 'button_text_en',
+        'button_link',
+        'blogs', 'projects'  # <-- добавьте эти поля
+    )
     form_extra_fields = {
         'subtitles_ru': CKEditorField(_('Описание (Русский)')),
         'subtitles_tk': CKEditorField(_('Описание (Туркменский)')),
         'subtitles_en': CKEditorField(_('Описание (Английский)')),
+        # Если используете Select2Field:
+        # 'blogs': SelectMultipleField('Блоги', coerce=int, widget=Select2Widget(multiple=True)),
+        # 'projects': SelectMultipleField('Проекты', coerce=int, widget=Select2Widget(multiple=True)),
     }
     form_widget_args = {
         'subtitles_ru': {'class': 'quill-editor'},

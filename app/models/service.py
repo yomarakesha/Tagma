@@ -2,6 +2,18 @@
 from flask_babel import get_locale
 from datetime import datetime
 
+service_blog = db.Table(
+    'service_blog',
+    db.Column('service_id', db.Integer, db.ForeignKey('service.id'), primary_key=True),
+    db.Column('blog_id', db.Integer, db.ForeignKey('blog.id'), primary_key=True)
+)
+
+service_project = db.Table(
+    'service_project',
+    db.Column('service_id', db.Integer, db.ForeignKey('service.id'), primary_key=True),
+    db.Column('project_id', db.Integer, db.ForeignKey('project.id'), primary_key=True)
+)
+
 class Service(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title_ru = db.Column(db.String(255), nullable=False)
@@ -16,6 +28,9 @@ class Service(db.Model):
     button_link = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    blogs = db.relationship('Blog', secondary=service_blog, backref='services')
+    projects = db.relationship('Project', secondary=service_project, backref='services')
+
     def to_dict(self):
         locale = str(get_locale()) or 'en'
         return {
@@ -24,5 +39,7 @@ class Service(db.Model):
             'subtitles': getattr(self, f'subtitles_{locale}', self.subtitles_en),
             'button_text': getattr(self, f'button_text_{locale}', self.button_text_en),
             'button_link': self.button_link,
-            'created_at': self.created_at.isoformat()
+            'created_at': self.created_at.isoformat(),
+            'blogs': [blog.to_dict() for blog in self.blogs],
+            'projects': [project.to_dict() for project in self.projects]
         }
