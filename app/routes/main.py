@@ -15,6 +15,8 @@ from app.models.contact_request import ContactRequest
 from app import db
 from datetime import datetime
 from app.models.partner import Partner
+from app.models.portfolio_pdf import PortfolioPDF
+import os
 
 main_bp = Blueprint('main', __name__)
 
@@ -229,12 +231,24 @@ def blogs_list():
         'data': [blog.to_dict() for blog in blogs]
     })
 
-@main_bp.route('/api/projects/<int:project_id>/download-pdf', methods=['GET'])
-def download_project_pdf(project_id):
-    project = Project.query.get_or_404(project_id)
-    if not project.pdf_file:
-        return jsonify({'error': 'PDF not found'}), 404
-    # Удаляем ведущий слэш, если есть
-    filename = project.pdf_file.lstrip('/Uploads/')
+@main_bp.route('/api/download-company-portfolio', methods=['GET'])
+def download_company_portfolio():
     upload_folder = current_app.config['UPLOAD_FOLDER']
+    filename = 'company_portfolio.pdf'
+    return send_from_directory(upload_folder, filename, as_attachment=True)
+
+@main_bp.route('/api/portfolio-pdf', methods=['GET'])
+def get_portfolio_pdf():
+    pdf = PortfolioPDF.query.order_by(PortfolioPDF.id.desc()).first()
+    if not pdf:
+        return jsonify({'status': 'error', 'message': 'No portfolio PDF found'}), 404
+    return jsonify({'status': 'success', 'data': pdf.to_dict()})
+
+@main_bp.route('/api/portfolio-pdf/download', methods=['GET'])
+def download_portfolio_pdf():
+    pdf = PortfolioPDF.query.order_by(PortfolioPDF.id.desc()).first()
+    if not pdf or not pdf.pdf_file:
+        return jsonify({'status': 'error', 'message': 'No portfolio PDF found'}), 404
+    upload_folder = current_app.config['UPLOAD_FOLDER']
+    filename = os.path.basename(pdf.pdf_file)
     return send_from_directory(upload_folder, filename, as_attachment=True)

@@ -22,7 +22,6 @@ class Project(db.Model):
     deliverables_en = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     categories = db.relationship('Category', secondary=project_category, backref=db.backref('projects', lazy='dynamic'))
-    pdf_file = db.Column(db.String(255))  # Поле для пути к PDF
 
     def to_dict(self):
         locale = str(get_locale()) or request.args.get('lang', 'en')
@@ -36,5 +35,4 @@ class Project(db.Model):
             'deliverables': getattr(self, f'deliverables_{locale}', self.deliverables_en),
             'categories': [category.to_dict() for category in self.categories],
             'created_at': self.created_at.isoformat(),
-            'pdf_file': self.pdf_file
         }

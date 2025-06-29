@@ -1,4 +1,4 @@
-﻿from flask import Flask, redirect, url_for, request, has_request_context
+﻿from flask import Flask, redirect, url_for, request, has_request_context, current_app
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user
 from flask_admin import Admin, AdminIndexView
@@ -17,7 +17,6 @@ from app.utils.file_upload import FileUploadField, MultipleFileUploadField
 from wtforms import TextAreaField
 from wtforms.fields import SelectMultipleField, PasswordField
 from wtforms import validators
-from flask import current_app
 import errno
 import stat
 import logging
@@ -28,13 +27,11 @@ migrate = Migrate()
 babel = Babel()
 ckeditor = CKEditor()
 
-# Конфигурация загрузки файлов
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# Кастомное поле для Quill Editor
 class QuillTextAreaField(TextAreaField):
     pass
 
@@ -107,11 +104,10 @@ class BannerAdminView(ModelAdminView):
             raise ValueError(_("Изображение баннера обязательно"))
 
 class ProjectAdminView(ModelAdminView):
-    column_list = ('id', 'title_ru', 'title_tk', 'title_en', 'background_image_url', 'button_text_ru', 'button_text_tk', 'button_text_en', 'pdf_file', 'created_at')
-    form_columns = ('title_ru', 'title_tk', 'title_en', 'description_ru', 'description_tk', 'description_en', 'background_image_file', 'pdf_file', 'button_text_ru', 'button_text_tk', 'button_text_en', 'button_link', 'deliverables_ru', 'deliverables_tk', 'deliverables_en', 'categories')
+    column_list = ('id', 'title_ru', 'title_tk', 'title_en', 'background_image_url', 'button_text_ru', 'button_text_tk', 'button_text_en', 'created_at')
+    form_columns = ('title_ru', 'title_tk', 'title_en', 'description_ru', 'description_tk', 'description_en', 'background_image_file', 'button_text_ru', 'button_text_tk', 'button_text_en', 'button_link', 'deliverables_ru', 'deliverables_tk', 'deliverables_en', 'categories')
     form_extra_fields = {
         'background_image_file': FileUploadField(_('Фоновое изображение'), base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS),
-        'pdf_file': FileUploadField(_('PDF-файл'), base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions={'pdf'}),
         'description_ru': CKEditorField(_('Описание (Русский)')),
         'description_tk': CKEditorField(_('Описание (Туркменский)')),
         'description_en': CKEditorField(_('Описание (Английский)')),
@@ -125,6 +121,7 @@ class ProjectAdminView(ModelAdminView):
             validators=[validators.Optional()]
         )
     }
+    # ...остальной код без pdf_file...
     form_widget_args = {
         'description_ru': {'class': 'quill-editor'},
         'description_tk': {'class': 'quill-editor'},
@@ -251,19 +248,6 @@ class ProjectAdminView(ModelAdminView):
             except Exception as e:
                 current_app.logger.error(f"Не удалось сохранить фоновое изображение в {file_path}: {str(e)}")
                 raise ValueError(f"Не удалось сохранить фоновое изображение: {str(e)}")
-
-        if form.pdf_file.data:
-            filename = secure_filename(form.pdf_file.data.filename)
-            file_path = os.path.join(upload_folder, filename)
-            current_app.logger.info(f"Попытка сохранить PDF в: {file_path}")
-            try:
-                form.pdf_file.data.save(file_path)
-                current_app.logger.info(f"PDF сохранён в {file_path}")
-                model.pdf_file = f'/Uploads/{filename}'
-            except Exception as e:
-                current_app.logger.error(f"Не удалось сохранить PDF в {file_path}: {str(e)}")
-                raise ValueError(f"Не удалось сохранить PDF: {str(e)}")
-
 class BlogAdminView(ModelAdminView):
     column_list = ('id', 'title_ru', 'title_tk', 'title_en', 'date', 'read_time', 'image_url', 'created_at')
     form_columns = ('title_ru', 'title_tk', 'title_en', 'description_ru', 'description_tk', 'description_en', 'image_file', 'additional_images_files', 'date', 'read_time', 'link')
@@ -456,15 +440,12 @@ class ServiceAdminView(ModelAdminView):
         'subtitles_ru', 'subtitles_tk', 'subtitles_en',
         'button_text_ru', 'button_text_tk', 'button_text_en',
         'button_link',
-        'blogs', 'projects'  # <-- добавьте эти поля
+        'blogs', 'projects'
     )
     form_extra_fields = {
         'subtitles_ru': CKEditorField(_('Описание (Русский)')),
         'subtitles_tk': CKEditorField(_('Описание (Туркменский)')),
         'subtitles_en': CKEditorField(_('Описание (Английский)')),
-        # Если используете Select2Field:
-        # 'blogs': SelectMultipleField('Блоги', coerce=int, widget=Select2Widget(multiple=True)),
-        # 'projects': SelectMultipleField('Проекты', coerce=int, widget=Select2Widget(multiple=True)),
     }
     form_widget_args = {
         'subtitles_ru': {'class': 'quill-editor'},
@@ -547,6 +528,30 @@ def get_locale_from_request():
         return request.accept_languages.best_match(['ru', 'tk', 'en'], default='en')
     return 'en'
 
+# PortfolioPDF Admin View
+from app.models.portfolio_pdf import PortfolioPDF
+class PortfolioPDFAdminView(ModelAdminView):
+    form_overrides = {
+        'pdf_file': FileUploadField
+    }
+    form_args = {
+        'pdf_file': {
+            'label': 'PDF-файл',
+            'base_path': lambda: current_app.config['UPLOAD_FOLDER'],
+            'allowed_extensions': {'pdf'},
+            'validators': [validators.DataRequired()]
+        }
+    }
+    def on_model_change(self, form, model, is_created):
+            upload_folder = current_app.config['UPLOAD_FOLDER']
+            if form.pdf_file.data:
+                filename = secure_filename(form.pdf_file.data.filename)
+                file_path = os.path.join(upload_folder, filename)
+                form.pdf_file.data.save(file_path)
+                model.pdf_file = f'/Uploads/{filename}'
+            elif is_created:
+                raise ValueError("PDF-файл обязателен")
+
 def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = os.urandom(24).hex()
@@ -605,7 +610,6 @@ def create_app():
     def load_user(user_id):
         return User.query.get(int(user_id))
 
-    admin = Admin(app, name='Панель администратора', template_mode='bootstrap3', index_view=MyAdminIndexView())
     from app.models.banner import Banner
     from app.models.project import Project
     from app.models.category import Category
@@ -618,6 +622,7 @@ def create_app():
     from app.models.contact_request import ContactRequest
     from app.models.partner import Partner
 
+    admin = Admin(app, name='Панель администратора', template_mode='bootstrap3', index_view=MyAdminIndexView())
     admin.add_view(UserAdminView(User, db.session))
     admin.add_view(BannerAdminView(Banner, db.session))
     admin.add_view(ProjectAdminView(Project, db.session))
@@ -630,6 +635,7 @@ def create_app():
     admin.add_view(AboutAdminView(About, db.session))
     admin.add_view(ModelAdminView(ContactRequest, db.session, name="Contact Requests"))
     admin.add_view(ModelAdminView(Partner, db.session, name="Partners"))
+    admin.add_view(PortfolioPDFAdminView(PortfolioPDF, db.session, name="Company Portfolio PDF"))
 
     with app.app_context():
         admin.add_link(MenuLink(name=_('Выход'), url='/logout'))
@@ -639,11 +645,9 @@ def create_app():
 
     with app.app_context():
         try:
-            # Создаём все таблицы перед инициализацией данных
             db.create_all()
             app.logger.info("Все таблицы успешно созданы")
 
-            # Инициализация данных
             if not User.query.first():
                 admin_user = User(username='admin', email='admin@example.com', is_admin=True)
                 admin_user.set_password('admin123')
@@ -824,8 +828,7 @@ def create_app():
             current_app.logger.info("Инициализация данных успешно завершена")
 
         except OperationalError as e:
-            current_app.logger.error(f"Пропуск инициализации данных из-за несоответствия схемы: {str(e)}")
-            db.session.rollback()
+            app.logger.error(f"Ошибка инициализации данных: {str(e)}")
 
     return app
 
