@@ -1,4 +1,4 @@
-﻿from flask import Blueprint, jsonify, render_template, request, redirect, url_for, flash, session
+﻿from flask import Blueprint, jsonify, render_template, request, redirect, url_for, flash, session, send_from_directory, current_app
 from flask_login import login_user, logout_user, login_required
 from flask_babel import _
 from app.models.banner import Banner
@@ -228,3 +228,13 @@ def blogs_list():
         'status': 'success',
         'data': [blog.to_dict() for blog in blogs]
     })
+
+@main_bp.route('/api/projects/<int:project_id>/download-pdf', methods=['GET'])
+def download_project_pdf(project_id):
+    project = Project.query.get_or_404(project_id)
+    if not project.pdf_file:
+        return jsonify({'error': 'PDF not found'}), 404
+    # Удаляем ведущий слэш, если есть
+    filename = project.pdf_file.lstrip('/Uploads/')
+    upload_folder = current_app.config['UPLOAD_FOLDER']
+    return send_from_directory(upload_folder, filename, as_attachment=True)
