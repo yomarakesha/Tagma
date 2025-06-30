@@ -13,7 +13,7 @@ from datetime import datetime
 from sqlalchemy.exc import OperationalError
 from werkzeug.utils import secure_filename
 from app.utils.file_upload import FileUploadField, MultipleFileUploadField
-from wtforms import validators
+from wtforms import validators, PasswordField
 import errno
 import stat
 import logging
@@ -221,6 +221,39 @@ class PortfolioPDFAdminView(ModelAdminView):
         elif is_created:
             raise ValueError("PDF-файл обязателен")
 
+# Work Admin
+from app.models.work import Work
+class WorkAdminView(ModelAdminView):
+    column_list = ('id', 'title', 'content', 'image_url', 'button_text', 'button_link', 'created_at')
+    form_columns = ('title', 'content', 'image_file', 'button_text', 'button_link')
+    form_extra_fields = {
+        'image_file': FileUploadField('Work Image', base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS),
+    }
+
+    def on_model_change(self, form, model, is_created):
+        upload_folder = current_app.config['UPLOAD_FOLDER']
+        self._ensure_upload_folder(upload_folder)
+        if form.image_file.data:
+            filename = secure_filename(form.image_file.data.filename)
+            file_path = os.path.join(upload_folder, filename)
+            form.image_file.data.save(file_path)
+            model.image_url = f'/Uploads/{filename}'
+        if not model.image_url and is_created:
+            raise ValueError("Work image required")
+
+# User Admin
+from app.models.user import User
+class UserAdminView(ModelAdminView):
+    column_list = ('id', 'username', 'is_admin', 'created_at')
+    form_columns = ('username', 'password', 'is_admin')
+    form_extra_fields = {
+        'password': PasswordField('Password')
+    }
+
+    def on_model_change(self, form, model, is_created):
+        if form.password.data:
+            model.set_password(form.password.data)
+
 def get_locale_from_request():
     if has_request_context():
         lang = request.args.get('lang')
@@ -289,7 +322,6 @@ def create_app():
     from app.models.partner import Partner
 
     admin = Admin(app, name='Admin Panel', template_mode='bootstrap3', index_view=MyAdminIndexView())
-    admin.add_view(ModelAdminView(User, db.session))
     admin.add_view(BannerAdminView(Banner, db.session))
     admin.add_view(ProjectAdminView(Project, db.session))
     admin.add_view(CategoryAdminView(Category, db.session))
@@ -301,6 +333,8 @@ def create_app():
     admin.add_view(PortfolioPDFAdminView(PortfolioPDF, db.session, name="Company Portfolio PDF"))
     admin.add_view(ModelAdminView(ContactRequest, db.session, name="Contact Requests"))
     admin.add_view(ModelAdminView(Partner, db.session, name="Partners"))
+    admin.add_view(WorkAdminView(Work, db.session, name="Works"))
+    admin.add_view(UserAdminView(User, db.session, name="Users"))
 
     with app.app_context():
         admin.add_link(MenuLink(name=_('Logout'), url='/logout'))
@@ -397,6 +431,19 @@ def create_app():
                     created_at=datetime(2025, 5, 27, 12, 45, 17)
                 )
                 db.session.add(about_item)
+
+            if not Work.query.first():
+                work = Work(
+                    title="Qwatt LED Bulb",
+                    content="Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+                    button_text="View project",
+                    button_link="",
+                    image_url="/images/image8.png",
+                    bg_color="oklch(79.2% 0.209 151.711)",
+                    type="branding",
+                    created_at=datetime(2025, 5, 27, 12, 45, 17)
+                )
+                db.session.add(work)
 
             db.session.commit()
             app.logger.info("Initial data created")

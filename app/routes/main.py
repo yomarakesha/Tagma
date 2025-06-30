@@ -17,6 +17,7 @@ from app import db
 from datetime import datetime
 from app.models.partner import Partner
 from app.models.portfolio_pdf import PortfolioPDF
+from app.models.work import Work
 import os
 
 main_bp = Blueprint('main', __name__)
@@ -253,3 +254,21 @@ def download_portfolio_pdf():
     upload_folder = current_app.config['UPLOAD_FOLDER']
     filename = os.path.basename(pdf.pdf_file)
     return send_from_directory(upload_folder, filename, as_attachment=True)
+
+@main_bp.route('/works', methods=['GET'])
+def works_list():
+    works = Work.query.all()
+    return jsonify({
+        'status': 'success',
+        'data': [work.to_dict() for work in works]
+    })
+
+@main_bp.route('/works/<string:type>/<int:id>', methods=['GET'])
+def work_detail(type, id):
+    work = Work.query.filter_by(type=type, id=id).first_or_404()
+    return jsonify({'status': 'success', 'data': work.to_dict()})
+
+@main_bp.route('/blogs/<slug>', methods=['GET'])
+def blog_detail(slug):
+    blog = Blog.query.filter_by(slug=slug).first_or_404()
+    return jsonify({'status': 'success', 'data': blog.to_dict()})

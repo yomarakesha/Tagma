@@ -1,5 +1,6 @@
 from app import db
 from datetime import datetime
+from sqlalchemy.types import PickleType
 
 class Blog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -10,6 +11,8 @@ class Blog(db.Model):
     date = db.Column(db.Date)
     read_time = db.Column(db.String(50))
     link = db.Column(db.String(255))
+    slug = db.Column(db.String(255), unique=True)
+    tags = db.Column(PickleType)  # или JSON, если используете PostgreSQL
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
@@ -22,5 +25,7 @@ class Blog(db.Model):
             'date': self.date.isoformat() if self.date else None,
             'read_time': self.read_time,
             'link': self.link,
+            'slug': self.slug,
+            'tags': self.tags,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }

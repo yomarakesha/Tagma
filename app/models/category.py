@@ -13,6 +13,7 @@ class Category(db.Model):
     def to_dict(self):
         return {
             'id': self.id,
+            'name': self.title,  # для JSON
             'title': self.title,
             'slug': self.slug,
             'link': self.link,
