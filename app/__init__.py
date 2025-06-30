@@ -294,8 +294,11 @@ def get_locale_from_request():
 
 def create_app():
     app = Flask(__name__)
-    app.config['SECRET_KEY'] = os.urandom(24).hex()
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(os.path.dirname(__file__), '..', 'site.db')
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24).hex())
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
+        'DATABASE_URL',
+        'sqlite:///' + os.path.join(os.path.dirname(__file__), '..', 'site.db')
+    )
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SESSION_COOKIE_SECURE'] = False
     app.config['SESSION_COOKIE_HTTPONLY'] = True
