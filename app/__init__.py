@@ -254,6 +254,36 @@ class UserAdminView(ModelAdminView):
         if form.password.data:
             model.set_password(form.password.data)
 
+# Contact Admin
+from app.models.contact import Contact
+class ContactAdminView(ModelAdminView):
+    column_list = ('id', 'phone', 'address_ru', 'address_tk', 'address_en', 'email', 'social_media', 'created_at')
+    form_columns = ('phone', 'address_ru', 'address_tk', 'address_en', 'email', 'social_media')
+
+# Partner Admin
+from app.models.partner import Partner
+class PartnerAdminView(ModelAdminView):
+    column_list = ('id', 'name', 'logo_url', 'description', 'created_at')
+    form_columns = ('name', 'logo_file', 'description')
+    form_extra_fields = {
+        'logo_file': FileUploadField(
+            'Logo',
+            base_path=lambda: current_app.config['UPLOAD_FOLDER'],
+            allowed_extensions=ALLOWED_EXTENSIONS
+        )
+    }
+
+    def on_model_change(self, form, model, is_created):
+        upload_folder = current_app.config['UPLOAD_FOLDER']
+        self._ensure_upload_folder(upload_folder)
+        if form.logo_file.data:
+            filename = secure_filename(form.logo_file.data.filename)
+            file_path = os.path.join(upload_folder, filename)
+            form.logo_file.data.save(file_path)
+            model.logo_url = f'/Uploads/{filename}'
+        if not model.logo_url and is_created:
+            raise ValueError("Logo image required")
+
 def get_locale_from_request():
     if has_request_context():
         lang = request.args.get('lang')
@@ -332,9 +362,10 @@ def create_app():
     admin.add_view(AboutItemAdminView(AboutItem, db.session, name="About Items"))
     admin.add_view(PortfolioPDFAdminView(PortfolioPDF, db.session, name="Company Portfolio PDF"))
     admin.add_view(ModelAdminView(ContactRequest, db.session, name="Contact Requests"))
-    admin.add_view(ModelAdminView(Partner, db.session, name="Partners"))
+    admin.add_view(PartnerAdminView(Partner, db.session, name="Partners"))
     admin.add_view(WorkAdminView(Work, db.session, name="Works"))
     admin.add_view(UserAdminView(User, db.session, name="Users"))
+    admin.add_view(ContactAdminView(Contact, db.session, name="Контакты"))
 
     with app.app_context():
         admin.add_link(MenuLink(name=_('Logout'), url='/logout'))

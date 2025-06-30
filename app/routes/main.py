@@ -263,6 +263,7 @@ def works_list():
         'data': [work.to_dict() for work in works]
     })
 
+
 @main_bp.route('/works/<string:type>/<int:id>', methods=['GET'])
 def work_detail(type, id):
     work = Work.query.filter_by(type=type, id=id).first_or_404()
