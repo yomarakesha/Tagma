@@ -268,6 +268,11 @@ def work_detail(type, id):
     work = Work.query.filter_by(type=type, id=id).first_or_404()
     return jsonify({'status': 'success', 'data': work.to_dict()})
 
+@main_bp.route('/works/<int:id>', methods=['GET'])
+def work_by_id(id):
+    work = Work.query.get_or_404(id)
+    return jsonify({'status': 'success', 'data': work.to_dict()})
+
 @main_bp.route('/blogs/<slug>', methods=['GET'])
 def blog_detail(slug):
     blog = Blog.query.filter_by(slug=slug).first_or_404()

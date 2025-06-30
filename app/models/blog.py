@@ -19,13 +19,10 @@ class Blog(db.Model):
         return {
             'id': self.id,
             'title': self.title,
-            'description': self.description,
-            'image_url': self.image_url,
-            'additional_images': self.additional_images,
-            'date': self.date.isoformat() if self.date else None,
-            'read_time': self.read_time,
-            'link': self.link,
             'slug': self.slug,
-            'tags': self.tags,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'image_url': self.image_url,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'read_time': int(self.read_time) if self.read_time and self.read_time.isdigit() else self.read_time,
+            'tags': self.tags or [],
+            'description': self.description
         }

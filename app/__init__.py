@@ -435,13 +435,14 @@ def create_app():
             if not Work.query.first():
                 work = Work(
                     title="Qwatt LED Bulb",
-                    content="Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
-                    button_text="View project",
-                    button_link="",
-                    image_url="/images/image8.png",
+                    description="Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+                    tags=["Branding", "Design"],
+                    main_image="/images/image9.png",
+                    content="Ausbuild.com.au is a lead generating, UX focused website that is powered by a creditable tech stack: Salesforce CRM, Heroku and Craft CMS. The site is integrated with Pardot and REA/Domain. And, includes a number of standout features such an interactive Masterplan and Floorplans, ability to Compare/Favourite properties, dynamic content and more. We’re pretty excited to see this project come to life and continue to evolve!",
+                    images=["/images/image9.png", "/images/image9.png", "/images/image9.png"],
+                    created_at=datetime(2025, 5, 27, 12, 45, 17),
                     bg_color="oklch(79.2% 0.209 151.711)",
-                    type="branding",
-                    created_at=datetime(2025, 5, 27, 12, 45, 17)
+                    type="branding"
                 )
                 db.session.add(work)
 
