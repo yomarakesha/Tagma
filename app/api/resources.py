@@ -4,7 +4,8 @@ from app import db
 from app.models.banner import Banner
 from app.models.project import Project
 from app.models.blog import Blog
-from app.models.category import Category, project_category
+from app.models.category import Category
+from app.models.project import project_category
 import io
 import os
 from werkzeug.utils import secure_filename

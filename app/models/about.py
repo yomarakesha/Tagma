@@ -1,38 +1,52 @@
 from app import db
-from flask_babel import get_locale
-from datetime import datetime
 
 class About(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title_ru = db.Column(db.String(255), nullable=False)
-    title_tk = db.Column(db.String(255), nullable=False)
-    title_en = db.Column(db.String(255), nullable=False)
-    subtitle_ru = db.Column(db.String(255))
-    subtitle_tk = db.Column(db.String(255))
-    subtitle_en = db.Column(db.String(255))
-    description1_ru = db.Column(db.Text)
-    description1_tk = db.Column(db.Text)
-    description1_en = db.Column(db.Text)
-    description2_ru = db.Column(db.Text)
-    description2_tk = db.Column(db.Text)
-    description2_en = db.Column(db.Text)
-    image_url = db.Column(db.String(255))
-    address = db.Column(db.String(255))  # Новое поле
-    logo_url = db.Column(db.String(255))  # Новое поле
-    image_url2 = db.Column(db.String(255))  # Новое поле
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    title = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text)
+    # Связь с AboutItem
+    items = db.relationship('AboutItem', backref='about', lazy='dynamic')
 
     def to_dict(self):
-        locale = str(get_locale()) or 'en'
         return {
             'id': self.id,
-            'title': getattr(self, f'title_{locale}', self.title_en),
-            'subtitle': getattr(self, f'subtitle_{locale}', self.subtitle_en),
-            'description1': getattr(self, f'description1_{locale}', self.description1_en),
-            'description2': getattr(self, f'description2_{locale}', self.description2_en),
-            'image_url': self.image_url,
-            'address': self.address,
-            'logo_url': self.logo_url,
-            'image_url2': self.image_url2,
-            'created_at': self.created_at.isoformat()
+            'title': self.title,
+            'description': self.description,
+            'items': [item.to_dict() for item in self.items]
         }
+
+class AboutItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    about_id = db.Column(db.Integer, db.ForeignKey('about.id'))
+    title = db.Column(db.String(255))
+    description = db.Column(db.Text)
+    background_image_url = db.Column(db.String(255))
+    button_text = db.Column(db.String(255))
+    button_link = db.Column(db.String(255))
+    deliverables = db.Column(db.Text)
+    color = db.Column(db.String(32))
+    type = db.Column(db.String(64))
+    created_at = db.Column(db.DateTime)
+    # Категории для AboutItem (многие ко многим)
+    categories = db.relationship('Category', secondary='aboutitem_category', backref='about_items')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'description': self.description,
+            'background_image_url': self.background_image_url,
+            'button_text': self.button_text,
+            'button_link': self.button_link,
+            'deliverables': self.deliverables,
+            'color': self.color,
+            'type': self.type,
+            'categories': [c.to_dict() for c in self.categories],
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+aboutitem_category = db.Table(
+    'aboutitem_category',
+    db.Column('aboutitem_id', db.Integer, db.ForeignKey('about_item.id')),
+    db.Column('category_id', db.Integer, db.ForeignKey('category.id'))
+)

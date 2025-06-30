@@ -2,7 +2,8 @@
 from flask_login import login_user, logout_user, login_required
 from flask_babel import _
 from app.models.banner import Banner
-from app.models.project import Project, Category
+from app.models.project import Project
+from app.models.category import Category
 from app.models.blog import Blog
 from app.models.client import Client
 from app.models.service import Service
@@ -52,11 +53,11 @@ def get_clients():
 
 @main_bp.route('/api/categories')
 def get_categories():
-    categories = Project.query.all()
+    categories = Category.query.all()
     return jsonify({
-        'categories': 'success',
-        'data': [category.to_dict() for category in categories]
-    })
+    'status': 'success',
+    'data': [category.to_dict() for category in categories]
+})
 
 @main_bp.route('/api/services')
 def get_services():

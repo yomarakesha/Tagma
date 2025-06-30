@@ -1,0 +1,763 @@
+{
+  "banners": [
+    {
+      "button_link": "/services",
+      "button_text": "See what we can do",
+      "created_at": "2025-05-27T12:45:17",
+      "id": 1,
+      "logo_url": "/images/image2.png",
+      "image_url": "/images/image.png",
+      "subtitle": "Tagma is a dynamic IT company based in Ashgabat, Turkmenistan, specializing in innovative solutions that empower businesses to thrive in the digital age.",
+      "title": "We are IT company specialising in Marketing, Branding design and ERP solutions."
+    }
+  ],
+  "projects": [
+    {
+      "background_image_url": "/images/Mask group0.png",
+      "button_link": "/static/images/about_office.jpg",
+      "button_text": "View project",
+      "categories": [
+        {
+          "id": 1,
+          "name": "Graphic Design& Branding"
+        }
+      ],
+      "created_at": "2025-05-27T12:45:17",
+      "deliverables": null,
+      "description": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+      "id": 1,
+      "title": "Qwatt LED Bulb",
+      "color": "#6d6d6d",
+      "type": "branding"
+    },
+    {
+      "background_image_url": "/images/Mask group0.png",
+      "button_link": "/static/images/about_office.jpg",
+      "button_text": "View project",
+      "categories": [
+        {
+          "id": 1,
+          "name": "Graphic Design& Branding"
+        }
+      ],
+      "created_at": "2025-05-27T12:45:17",
+      "deliverables": null,
+      "description": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+      "id": 2,
+      "title": "Qwatt LED Bulb",
+      "color": "#6d6d6d",
+      "brading": "branding",
+      "type": "branding"
+    },
+    {
+      "background_image_url": "/images/Mask group0.png",
+      "button_link": "/static/images/about_office.jpg",
+      "button_text": "View project",
+      "categories": [
+        {
+          "id": 1,
+          "name": "Graphic Design& Branding"
+        }
+      ],
+      "created_at": "2025-05-27T12:45:17",
+      "deliverables": null,
+      "description": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+      "id": 3,
+      "title": "Qwatt LED Bulb",
+      "color": "#6d6d6d",
+      "type": "branding"
+    }
+  ],
+  "blogs": {
+    "data": [
+      {
+        "id": 1,
+        "title": "Website and Interactive Masterplan",
+        "description": "We're excited to announce the launch of Wallis Creek, a new community website featuring the innovative...",
+        "image_url": "/images/image4.png",
+        "additional_images": null,
+        "date": "2025-01-01",
+        "read_time": "3 min read",
+        "link": "https://turkmentv.gov.tm",
+        "created_at": "2025-06-10T16:52:48"
+      },
+      {
+        "id": 2,
+        "title": "Website and Interactive Masterplan",
+        "description": "We're excited to announce the launch of Wallis Creek, a new community website featuring the innovative...",
+        "image_url": "/images/image4.png",
+        "additional_images": null,
+        "date": "2025-01-01",
+        "read_time": "3 min read",
+        "link": "https://turkmentv.gov.tm",
+        "created_at": "2025-06-10T16:52:48"
+      },
+      {
+        "id": 3,
+        "title": "Website and Interactive Masterplan",
+        "description": "We're excited to announce the launch of Wallis Creek, a new community website featuring the innovative...",
+        "image_url": "/images/image4.png",
+        "additional_images": null,
+        "date": "2025-01-01",
+        "read_time": "3 min read",
+        "link": "https://turkmentv.gov.tm",
+        "created_at": "2025-06-10T16:52:48"
+      },
+      {
+        "id": 4,
+        "title": "Website and Interactive Masterplan",
+        "description": "We're excited to announce the launch of Wallis Creek, a new community website featuring the innovative...",
+        "image_url": "/images/image4.png",
+        "additional_images": null,
+        "date": "2025-01-01",
+        "read_time": "3 min read",
+        "link": "https://turkmentv.gov.tm",
+        "created_at": "2025-06-10T16:52:48"
+      },
+      {
+        "id": 5,
+        "title": "Website and Interactive Masterplan",
+        "description": "We're excited to announce the launch of Wallis Creek, a new community website featuring the innovative...",
+        "image_url": "/images/image4.png",
+        "additional_images": null,
+        "date": "2025-01-01",
+        "read_time": "3 min read",
+        "link": "https://turkmentv.gov.tm",
+        "created_at": "2025-06-10T16:52:48"
+      }
+    ],
+    "status": "success",
+    "total": 5,
+    "page": 1,
+    "pageCount": 1,
+    "has_next": true,
+    "has_prev": false
+  },
+  "clients": [
+    {
+      "id": 1,
+      "logo_url": "/images/icons/umbrellahover.svg",
+      "default_logo": "/images/icons/umbrella.svg",
+      "created_at": "2025-05-27T12:45:17"
+    },
+    {
+      "id": 2,
+      "logo_url": "/images/icons/umbrellahover.svg",
+      "default_logo": "/images/icons/umbrella.svg",
+      "created_at": "2025-05-27T12:45:17"
+    },
+    {
+      "id": 3,
+      "logo_url": "/images/icons/umbrellahover.svg",
+      "default_logo": "/images/icons/umbrella.svg",
+      "created_at": "2025-05-27T12:45:17"
+    },
+    {
+      "id": 4,
+      "logo_url": "/images/icons/umbrellahover.svg",
+      "default_logo": "/images/icons/umbrella.svg",
+      "created_at": "2025-05-27T12:45:17"
+    },
+    {
+      "id": 5,
+      "logo_url": "/images/icons/umbrellahover.svg",
+      "default_logo": "/images/icons/umbrella.svg",
+      "created_at": "2025-05-27T12:45:17"
+    }
+  ],
+  "about": {
+    "id": 1,
+    "title": "About Us",
+    "description": "Property Flow is our unique digital marketing offering created exclusively for property clients. We build sophisticated, award-winning solutions that encompass four quadrants: discover, design, build and grow.",
+    "items": [
+      {
+        "background_image_url": "/images/Mask group0.png",
+        "button_link": "/static/images/about_office.jpg",
+        "button_text": "View project",
+        "categories": [
+          {
+            "id": 1,
+            "name": "Graphic Design& Branding"
+          }
+        ],
+        "created_at": "2025-05-27T12:45:17",
+        "deliverables": null,
+        "description": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+        "id": 1,
+        "title": "Qwatt LED Bulb",
+        "color": "#6d6d6d",
+        "type": "branding"
+      },
+      {
+        "background_image_url": "/images/Mask group0.png",
+        "button_link": "/static/images/about_office.jpg",
+        "button_text": "View project",
+        "categories": [
+          {
+            "id": 1,
+            "name": "Graphic Design& Branding"
+          }
+        ],
+        "created_at": "2025-05-27T12:45:17",
+        "deliverables": null,
+        "description": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+        "id": 2,
+        "title": "Qwatt LED Bulb",
+        "color": "#6d6d6d",
+        "type": "branding"
+      },
+      {
+        "background_image_url": "/images/Mask group0.png",
+        "button_link": "/static/images/about_office.jpg",
+        "button_text": "View project",
+        "categories": [
+          {
+            "id": 1,
+            "name": "Graphic Design& Branding"
+          }
+        ],
+        "created_at": "2025-05-27T12:45:17",
+        "deliverables": null,
+        "description": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+        "id": 3,
+        "title": "Qwatt LED Bulb",
+        "color": "#6d6d6d",
+        "type": "branding"
+      },
+      {
+        "background_image_url": "/images/Mask group0.png",
+        "button_link": "/static/images/about_office.jpg",
+        "button_text": "View project",
+        "categories": [
+          {
+            "id": 1,
+            "name": "Graphic Design& Branding"
+          }
+        ],
+        "created_at": "2025-05-27T12:45:17",
+        "deliverables": null,
+        "description": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+        "id": 4,
+        "title": "Qwatt LED Bulb",
+        "color": "#6d6d6d",
+        "type": "branding"
+      },
+      {
+        "background_image_url": "/images/Mask group0.png",
+        "button_link": "/static/images/about_office.jpg",
+        "button_text": "View project",
+        "categories": [
+          {
+            "id": 1,
+            "name": "Graphic Design& Branding"
+          }
+        ],
+        "created_at": "2025-05-27T12:45:17",
+        "deliverables": null,
+        "description": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+        "id": 5,
+        "title": "Qwatt LED Bulb",
+        "color": "#6d6d6d",
+        "type": "branding"
+      },
+      {
+        "background_image_url": "/images/Mask group0.png",
+        "button_link": "/static/images/about_office.jpg",
+        "button_text": "View project",
+        "categories": [
+          {
+            "id": 1,
+            "name": "Graphic Design& Branding"
+          }
+        ],
+        "created_at": "2025-05-27T12:45:17",
+        "deliverables": null,
+        "description": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+        "id": 6,
+        "title": "Qwatt LED Bulb",
+        "color": "#6d6d6d",
+        "type": "branding"
+      },
+      {
+        "background_image_url": "/images/Mask group0.png",
+        "button_link": "/static/images/about_office.jpg",
+        "button_text": "View project",
+        "categories": [
+          {
+            "id": 1,
+            "name": "Graphic Design& Branding"
+          }
+        ],
+        "created_at": "2025-05-27T12:45:17",
+        "deliverables": null,
+        "description": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+        "id": 7,
+        "title": "Qwatt LED Bulb",
+        "color": "#6d6d6d",
+        "type": "branding"
+      },
+      {
+        "background_image_url": "/images/Mask group0.png",
+        "button_link": "/static/images/about_office.jpg",
+        "button_text": "View project",
+        "categories": [
+          {
+            "id": 1,
+            "name": "Graphic Design& Branding"
+          }
+        ],
+        "created_at": "2025-05-27T12:45:17",
+        "deliverables": null,
+        "description": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+        "id": 8,
+        "title": "Qwatt LED Bulb",
+        "color": "#6d6d6d",
+        "type": "branding"
+      },
+      {
+        "background_image_url": "/images/Mask group0.png",
+        "button_link": "/static/images/about_office.jpg",
+        "button_text": "View project",
+        "categories": [
+          {
+            "id": 1,
+            "name": "Graphic Design& Branding"
+          }
+        ],
+        "created_at": "2025-05-27T12:45:17",
+        "deliverables": null,
+        "description": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+        "id": 9,
+        "title": "Qwatt LED Bulb",
+        "color": "#6d6d6d",
+        "type": "branding"
+      },
+      {
+        "background_image_url": "/images/Mask group0.png",
+        "button_link": "/static/images/about_office.jpg",
+        "button_text": "View project",
+        "categories": [
+          {
+            "id": 1,
+            "name": "Graphic Design& Branding"
+          }
+        ],
+        "created_at": "2025-05-27T12:45:17",
+        "deliverables": null,
+        "description": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+        "id": 10,
+        "title": "Qwatt LED Bulb",
+        "color": "#6d6d6d",
+        "type": "branding"
+      }
+    ]
+  },
+  "works": [
+    {
+      "title": "Qwatt LED Bulb",
+      "content": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+      "button_text": "View project",
+      "button_link": "",
+      "created_at": "2025-05-27T12:45:17",
+      "id": 1,
+      "image_url": "/images/image8.png",
+      "bg_color": "oklch(79.2% 0.209 151.711)",
+      "type": "branding"
+
+    },
+    {
+      "title": "Qwatt LED Bulb",
+      "content": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+      "button_text": "View project",
+      "button_link": "",
+      "created_at": "2025-05-27T12:45:17",
+      "id": 2,
+      "image_url": "/images/image8.png",
+      "bg_color": "oklch(79.2% 0.209 151.711)",
+      "type": "branding"
+    },
+    {
+      "title": "Qwatt LED Bulb",
+      "content": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+      "button_text": "View project",
+      "button_link": "",
+      "created_at": "2025-05-27T12:45:17",
+      "id": 3,
+      "image_url": "/images/image8.png",
+      "bg_color": "oklch(79.2% 0.209 151.711)",
+      "type": "branding"
+    },
+    {
+      "title": "Qwatt LED Bulb",
+      "content": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+      "button_text": "View project",
+      "button_link": "",
+      "created_at": "2025-05-27T12:45:17",
+      "id": 4,
+      "image_url": "/images/image8.png",
+      "bg_color": "oklch(79.2% 0.209 151.711)",
+      "type": "branding"
+    },
+    {
+      "title": "Qwatt LED Bulb",
+      "content": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+      "button_text": "View project",
+      "button_link": "",
+      "created_at": "2025-05-27T12:45:17",
+      "id": 5,
+      "image_url": "/images/image8.png",
+      "bg_color": "oklch(79.2% 0.209 151.711)",
+      "type": "branding"
+    },
+    {
+      "title": "Qwatt LED Bulb",
+      "content": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+      "button_text": "View project",
+      "button_link": "",
+      "created_at": "2025-05-27T12:45:17",
+      "id": 6,
+      "image_url": "/images/image8.png",
+      "bg_color": "oklch(79.2% 0.209 151.711)",
+      "type": "branding"
+    },
+    {
+      "title": "Qwatt LED Bulb",
+      "content": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+      "button_text": "View project",
+      "button_link": "",
+      "created_at": "2025-05-27T12:45:17",
+      "id": 7,
+      "image_url": "/images/image8.png",
+      "bg_color": "oklch(79.2% 0.209 151.711)",
+      "type": "branding"
+    },
+    {
+      "title": "Qwatt LED Bulb",
+      "content": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+      "button_text": "View project",
+      "button_link": "",
+      "created_at": "2025-05-27T12:45:17",
+      "id": 8,
+      "image_url": "/images/image8.png",
+      "bg_color": "oklch(79.2% 0.209 151.711)",
+      "type": "branding"
+    },
+    {
+      "title": "Qwatt LED Bulb",
+      "content": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+      "button_text": "View project",
+      "button_link": "",
+      "created_at": "2025-05-27T12:45:17",
+      "id": 9,
+      "image_url": "/images/image8.png",
+      "bg_color": "oklch(79.2% 0.209 151.711)",
+      "type": "branding"
+    },
+    {
+      "title": "Qwatt LED Bulb",
+      "content": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+      "button_text": "View project",
+      "button_link": "",
+      "created_at": "2025-05-27T12:45:17",
+      "id": 10,
+      "image_url": "/images/image8.png",
+      "bg_color": "oklch(79.2% 0.209 151.711)",
+      "type": "branding"
+    }
+  ],
+  "contact-request": [
+    {
+      "id": "337e",
+      "email": "lfkdjlkjds",
+      "full_name": ";sfsdfkj",
+      "meeting_date": "2025.6.28 - 2025.6.28 ",
+      "meeting_time": "14:00",
+      "message": "sdlkfjsdkljf",
+      "phone": "lksdjf",
+      "subject": "",
+      "terms_accepted": false,
+      "timezone": "",
+      "company_name": ""
+    },
+    {
+      "id": "dd21",
+      "email": "trsdgds",
+      "full_name": "jkhgbjjkh",
+      "meeting_date": "2022.2.1 - 2022.2.3 ",
+      "meeting_time": "14:00",
+      "message": "htrdyjhd",
+      "phone": "threthedy",
+      "subject": "",
+      "terms_accepted": false,
+      "timezone": "",
+      "company_name": "yhfhg"
+    }
+  ],
+  "blogs-": [
+    {
+      "id": 1,
+      "title": "Website and Interactive Masterplan",
+      "slug": "interactive-masterplan",
+      "image_url": "/images/image12.png",
+      "created_at": "2025-01-05T08:30:00.000Z",
+      "read_time": 5,
+      "tags": ["IT Consulting", "UX/UI", "Strategy"],
+      "description": "<h2>Why Masterplans Matter</h2><p>Interactive masterplans allow <strong>clients</strong> to see progress in real-time.</p><ul><li>3D modeling</li><li>GIS integration</li></ul><blockquote>This approach enhances transparency.</blockquote>"
+    },
+    {
+      "id": 2,
+      "title": "Optimizing Vue Applications",
+      "slug": "optimizing-vue-apps",
+      "image_url": "/images/image13.png",
+      "created_at": "2025-02-12T14:15:00.000Z",
+      "read_time": 7,
+      "tags": ["Frontend", "Vue", "Performance"],
+      "description": "<h1 class='text-3xl font-bold'>This is heading 1</h1><h2>This is heading 2</h2><h3>This is heading 3</h3><h4>This is heading 4</h4><h5>This is heading 5</h5><h6>This is heading 6</h6>"
+    },
+    {
+      "id": 3,
+      "title": "Designing for Accessibility",
+      "slug": "accessible-design",
+      "image_url": "/images/image14.png",
+      "created_at": "2025-03-01T09:00:00.000Z",
+      "read_time": 6,
+      "tags": ["UX", "A11y", "Design"],
+      "description": "<p>Accessibility in digital design ensures inclusive experiences for all users, including those with disabilities. Use semantic HTML, keyboard navigation, and ARIA attributes.</p>"
+    },
+    {
+      "id": 4,
+      "title": "Modern Backend with Go and PostgreSQL",
+      "slug": "go-postgresql-api",
+      "image_url": "/images/image15.png",
+      "created_at": "2025-03-20T11:30:00.000Z",
+      "read_time": 8,
+      "tags": ["Backend", "Go", "PostgreSQL"],
+      "description": "<p>Building RESTful APIs in Go is clean, fast and scalable. Combine it with PostgreSQL for powerful data access and strong schema control.</p>"
+    },
+    {
+      "id": 5,
+      "title": "Deploying Nuxt on Vercel",
+      "slug": "nuxt-vercel-deploy",
+      "image_url": "/images/image16.png",
+      "created_at": "2025-04-10T15:45:00.000Z",
+      "read_time": 4,
+      "tags": ["DevOps", "Nuxt", "Deployment"],
+      "description": "<p>Vercel offers first-class support for Nuxt apps. Connect GitHub repo, set up build command and your app is live in minutes.</p>"
+    }
+  ],
+  "categories": {
+    "data": [
+      {
+        "link": "/services/#branding-design",
+        "slug": "branding-design",
+        "created_at": "2025-06-28T05:08:06.679738",
+        "id": 2,
+        "title": "Branding Design",
+        "bg_color": "#FAFAFA",
+        "description": "Property Flow is our unique digital marketing offering created exclusively for property clients."
+      },
+      {
+        "link": "/services/#it-consulting",
+        "slug": "it-consulting",
+        "created_at": "2025-06-28T05:08:06.677910",
+        "id": 1,
+        "title": "IT Consulting",
+        "bg_color": "#F4F4F4",
+        "description": "Property Flow is our unique digital marketing offering created exclusively for property clients."
+      },
+      {
+        "link": "/services/#erp-solutions",
+        "slug": "erp-solutions",
+        "created_at": "2025-06-28T05:08:06.681061",
+        "id": 3,
+        "title": "Industrial IT",
+        "bg_color": "#F4F4F4",
+        "description": "Property Flow is our unique digital marketing offering created exclusively for property clients."
+      },
+      {
+        "link": "/services/#factory-engineering-solutions",
+        "slug": "factory-engineering-solutions",
+        "created_at": "2025-06-28T05:08:06.682383",
+        "id": 4,
+        "title": "Factory Engineering Solutions",
+        "bg_color": "#FAFAFA",
+        "description": "Property Flow is our unique digital marketing offering created exclusively for property clients."
+      }
+    ],
+    "status": "success"
+  },
+  "services": {
+    "data": [
+      {
+        "category": {
+          "link": "/services/#branding-design",
+          "slug": "branding-design",
+          "created_at": "2025-06-28T05:08:06.679738",
+          "id": 2,
+          "title": "Branding Design",
+          "bg_color": "#FAFAFA",
+          "description": "Property Flow is our unique digital marketing offering created exclusively for property clients."
+        },
+        "projects": [
+          {
+            "title": "Qwatt LED Bulb",
+            "content": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+            "button_text": "View project",
+            "button_link": "",
+            "created_at": "2025-05-27T12:45:17",
+            "id": 1,
+            "image_url": "/images/image8.png",
+            "bg_color": "purple",
+            "type": "branding"
+          },
+          {
+            "title": "Qwatt LED Bulb",
+            "content": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+            "button_text": "View project",
+            "button_link": "",
+            "created_at": "2025-05-27T12:45:17",
+            "id": 2,
+            "image_url": "/images/image8.png",
+            "bg_color": "oklch(79.2% 0.209 151.711)",
+            "type": "branding"
+          }
+        ],
+        "blogs": [
+          {
+            "id": 1,
+            "title": "Website and Interactive Masterplan",
+            "description": "We're excited to announce the launch of Wallis Creek, a new community website featuring the innovative...",
+            "image_url": "/images/image4.png",
+            "additional_images": null,
+            "date": "2025-01-01",
+            "read_time": "3 min read",
+            "link": "https://turkmentv.gov.tm",
+            "created_at": "2025-06-10T16:52:48"
+          }
+        ],
+        "created_at": "2025-06-28T05:08:06.679738",
+        "id": 2,
+        "content": "Through our extensive discovery process, we define your project requirements to ensure you get the best results. We want to know: where are you now? And where do you want to be? Then we create the plan for you to get there. Through our extensive discovery process, we define your project requirements to ensure you get the best results. We want to know: where are you now? And where do you want to be? Then we create the plan for you to get there. Through our extensive discovery process, we define your project requirements to ensure you get the best results. We want to know: where are you now? And where do you want to be? Then we create the plan for you to get there. Through our extensive discovery process, we define your project requirements to ensure you get the best results. We want to know: where are you now? And where do you want to be? Then we create the plan for you to get there."
+      },
+      {
+        "category": {
+          "link": "/services/#it-consulting",
+          "slug": "it-consulting",
+          "created_at": "2025-06-28T05:08:06.677910",
+          "id": 1,
+          "title": "IT Consulting",
+          "bg_color": "#F4F4F4",
+          "description": "Property Flow is our unique digital marketing offering created exclusively for property clients."
+        },
+        "projects": [
+          {
+            "title": "Qwatt LED Bulb",
+            "content": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+            "button_text": "View project",
+            "button_link": "",
+            "created_at": "2025-05-27T12:45:17",
+            "id": 1,
+            "image_url": "/images/image8.png",
+            "bg_color": "oklch(79.2% 0.209 151.711)",
+            "type": "branding"
+          },
+          {
+            "title": "Qwatt LED Bulb",
+            "content": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+            "button_text": "View project",
+            "button_link": "",
+            "created_at": "2025-05-27T12:45:17",
+            "id": 2,
+            "image_url": "/images/image8.png",
+            "bg_color": "oklch(79.2% 0.209 151.711)",
+            "type": "branding"
+          }
+        ],
+        "blogs": [
+          {
+            "id": 1,
+            "title": "Website and Interactive Masterplan",
+            "description": "We're excited to announce the launch of Wallis Creek, a new community website featuring the innovative...",
+            "image_url": "/images/image4.png",
+            "additional_images": null,
+            "date": "2025-01-01",
+            "read_time": "3 min read",
+            "link": "https://turkmentv.gov.tm",
+            "created_at": "2025-06-10T16:52:48"
+          }
+        ],
+        "created_at": "2025-06-28T05:08:06.677910",
+        "id": 1,
+        "content": "Through our extensive discovery process, we define your project requirements to ensure you get the best results. We want to know: where are you now? And where do you want to be? Then we create the plan for you to get there. Through our extensive discovery process, we define your project requirements to ensure you get the best results. We want to know: where are you now? And where do you want to be? Then we create the plan for you to get there. Through our extensive discovery process, we define your project requirements to ensure you get the best results. We want to know: where are you now? And where do you want to be? Then we create the plan for you to get there."
+      },
+      {
+        "category": {
+          "link": "/services/#erp-solutions",
+          "slug": "erp-solutions",
+          "created_at": "2025-06-28T05:08:06.681061",
+          "id": 3,
+          "title": "Industrial IT",
+          "bg_color": "#F4F4F4",
+          "description": "Property Flow is our unique digital marketing offering created exclusively for property clients."
+        },
+        "projects": [
+          {
+            "title": "Qwatt LED Bulb",
+            "content": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+            "button_text": "View project",
+            "button_link": "",
+            "created_at": "2025-05-27T12:45:17",
+            "id": 1,
+            "image_url": "/images/image8.png",
+            "bg_color": "oklch(79.2% 0.209 151.711)",
+            "type": "branding"
+          },
+          {
+            "title": "Qwatt LED Bulb",
+            "content": "Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
+            "button_text": "View project",
+            "button_link": "",
+            "created_at": "2025-05-27T12:45:17",
+            "id": 2,
+            "image_url": "/images/image8.png",
+            "bg_color": "oklch(79.2% 0.209 151.711)",
+            "type": "branding"
+          }
+        ],
+        "blogs": [
+          {
+            "id": 1,
+            "title": "Website and Interactive Masterplan",
+            "description": "We're excited to announce the launch of Wallis Creek, a new community website featuring the innovative...",
+            "image_url": "/images/image4.png",
+            "additional_images": null,
+            "date": "2025-01-01",
+            "read_time": "3 min read",
+            "link": "https://turkmentv.gov.tm",
+            "created_at": "2025-06-10T16:52:48"
+          }
+        ],
+        "created_at": "2025-06-28T05:08:06.681061",
+        "id": 3,
+        "content": "Digital discovery Site architecture (site map) Wireframes Website design - desktop and mobile Digital brand extension - formatting style sheet Website development and implementation CMS: Craf Third-party integrations - Salesforce CRM and Pardo Marketing assets: PDF generation, Email (transactional and campaign) templates etc. Major and minor website features e.g. interactive Masterplan, interactive Home Options Floorplan, etc Integration with REA and Domain"
+      },
+      {
+        "category": {
+          "link": "/services/#factory-engineering-solutions",
+          "slug": "factory-engineering-solutions",
+          "created_at": "2025-06-28T05:08:06.682383",
+          "id": 4,
+          "title": "Factory Engineering Solutions",
+          "bg_color": "#FAFAFA",
+          "description": "Property Flow is our unique digital marketing offering created exclusively for property clients."
+        },
+        "blogs": [],
+        "projects": [],
+        "created_at": "",
+        "id": "4",
+        "content": "Through our extensive discovery process, we define your project requirements to ensure you get the best results. We want to know: where are you now? And where do you want to be? Then we create the plan for you to get there. Through our extensive discovery process, we define your project requirements to ensure you get the best results. We want to know: where are you now? And where do you want to be? Then we create the plan for you to get there. Through our extensive discovery process, we define your project requirements to ensure you get the best results. We want to know: where are you now? And where do you want to be? Then we create the plan for you to get there."
+      }
+    ],
+    "status": "success"
+  }
+}

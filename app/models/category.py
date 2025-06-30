@@ -1,27 +1,22 @@
 from app import db
-from flask_babel import get_locale
 from datetime import datetime
 
-project_category = db.Table('project_category',
-    db.Column('project_id', db.Integer, db.ForeignKey('project.id'), primary_key=True),
-    db.Column('category_id', db.Integer, db.ForeignKey('category.id'), primary_key=True)
-)
-
 class Category(db.Model):
-    __tablename__ = 'category'
     id = db.Column(db.Integer, primary_key=True)
-    name_ru = db.Column(db.String(255), nullable=False)
-    name_tk = db.Column(db.String(255), nullable=False)
-    name_en = db.Column(db.String(255), nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    slug = db.Column(db.String(255))
+    link = db.Column(db.String(255))
+    bg_color = db.Column(db.String(32))
+    description = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    def __str__(self):
-        locale = str(get_locale()) or 'en'
-        return getattr(self, f'name_{locale}', self.name_en)
-
     def to_dict(self):
-        locale = str(get_locale()) or 'en'
         return {
             'id': self.id,
-            'name': getattr(self, f'name_{locale}', self.name_en)
+            'title': self.title,
+            'slug': self.slug,
+            'link': self.link,
+            'bg_color': self.bg_color,
+            'description': self.description,
+            'created_at': self.created_at.isoformat() if self.created_at else None
         }
