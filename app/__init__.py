@@ -365,7 +365,7 @@ def create_app():
     admin.add_view(PartnerAdminView(Partner, db.session, name="Partners"))
     admin.add_view(WorkAdminView(Work, db.session, name="Works"))
     admin.add_view(UserAdminView(User, db.session, name="Users"))
-    admin.add_view(ContactAdminView(Contact, db.session, name="Контакты"))
+    # admin.add_view(ContactAdminView(Contact, db.session, name="Контакты"))  # Удалено из админки
 
     with app.app_context():
         admin.add_link(MenuLink(name=_('Logout'), url='/logout'))
@@ -377,109 +377,6 @@ def create_app():
         try:
             db.create_all()
             app.logger.info("All tables created")
-
-            # Пример инициализации данных (минимально, только для теста)
-            if not User.query.first():
-                admin_user = User(username='admin', is_admin=True)
-                admin_user.set_password('admin123')
-                db.session.add(admin_user)
-
-            if not Banner.query.first():
-                banner = Banner(
-                    title="We are IT company specialising in Marketing, Branding design and ERP solutions.",
-                    subtitle="Tagma is a dynamic IT company based in Ashgabat, Turkmenistan, specializing in innovative solutions that empower businesses to thrive in the digital age.",
-                    image_url="/images/image.png",
-                    logo_url="/images/image2.png",
-                    button_text="See what we can do",
-                    button_link="/services",
-                    created_at=datetime(2025, 5, 27, 12, 45, 17)
-                )
-                db.session.add(banner)
-
-            if not Category.query.first():
-                categories = [
-                    dict(id=1, title="Graphic Design& Branding", slug="branding-design", link="/services/#branding-design", bg_color="#FAFAFA", description="Property Flow is our unique digital marketing offering created exclusively for property clients.", created_at=datetime(2025, 6, 28, 5, 8, 6)),
-                    dict(id=2, title="IT Consulting", slug="it-consulting", link="/services/#it-consulting", bg_color="#F4F4F4", description="Property Flow is our unique digital marketing offering created exclusively for property clients.", created_at=datetime(2025, 6, 28, 5, 8, 6)),
-                ]
-                for cat in categories:
-                    db.session.add(Category(**cat))
-
-            if not Project.query.first():
-                category = Category.query.first()
-                project = Project(
-                    title="Qwatt LED Bulb",
-                    description="Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
-                    background_image_url="/images/Mask group0.png",
-                    button_text="View project",
-                    button_link="/static/images/about_office.jpg",
-                    deliverables=None,
-                    color="#6d6d6d",
-                    type="branding",
-                    created_at=datetime(2025, 5, 27, 12, 45, 17)
-                )
-                if category:
-                    project.categories.append(category)
-                db.session.add(project)
-
-            if not Blog.query.first():
-                blog = Blog(
-                    title="Website and Interactive Masterplan",
-                    description="We're excited to announce the launch of Wallis Creek, a new community website featuring the innovative...",
-                    image_url="/images/image4.png",
-                    additional_images=None,
-                    date=datetime(2025, 1, 1),
-                    read_time="3 min read",
-                    link="https://turkmentv.gov.tm",
-                    created_at=datetime(2025, 6, 10, 16, 52, 48)
-                )
-                db.session.add(blog)
-
-            if not Client.query.first():
-                client = Client(
-                    logo_url="/images/icons/umbrellahover.svg",
-                    default_logo="/images/icons/umbrella.svg",
-                    created_at=datetime(2025, 5, 27, 12, 45, 17)
-                )
-                db.session.add(client)
-
-            if not About.query.first():
-                about = About(
-                    title="About Us",
-                    description="Property Flow is our unique digital marketing offering created exclusively for property clients. We build sophisticated, award-winning solutions that encompass four quadrants: discover, design, build and grow."
-                )
-                db.session.add(about)
-                db.session.flush()
-                about_item = AboutItem(
-                    about_id=about.id,
-                    title="Qwatt LED Bulb",
-                    description="Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
-                    background_image_url="/images/Mask group0.png",
-                    button_text="View project",
-                    button_link="/static/images/about_office.jpg",
-                    deliverables=None,
-                    color="#6d6d6d",
-                    type="branding",
-                    created_at=datetime(2025, 5, 27, 12, 45, 17)
-                )
-                db.session.add(about_item)
-
-            if not Work.query.first():
-                work = Work(
-                    title="Qwatt LED Bulb",
-                    description="Tagma’s branding shines through in Qwatt’s identity-bright, bold, and timeless, just like its LEDs. We wraps it in a design that speaks clarity and brilliance.",
-                    tags=["Branding", "Design"],
-                    main_image="/images/image9.png",
-                    content="Ausbuild.com.au is a lead generating, UX focused website that is powered by a creditable tech stack: Salesforce CRM, Heroku and Craft CMS. The site is integrated with Pardot and REA/Domain. And, includes a number of standout features such an interactive Masterplan and Floorplans, ability to Compare/Favourite properties, dynamic content and more. We’re pretty excited to see this project come to life and continue to evolve!",
-                    images=["/images/image9.png", "/images/image9.png", "/images/image9.png"],
-                    created_at=datetime(2025, 5, 27, 12, 45, 17),
-                    bg_color="oklch(79.2% 0.209 151.711)",
-                    type="branding"
-                )
-                db.session.add(work)
-
-            db.session.commit()
-            app.logger.info("Initial data created")
-
         except OperationalError as e:
             app.logger.error(f"Ошибка инициализации данных: {str(e)}")
 
