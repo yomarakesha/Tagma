@@ -7,7 +7,7 @@ from flask_admin.menu import MenuLink
 from flask_migrate import Migrate
 from flask_cors import CORS
 from flask_babel import Babel, _
-from flask_ckeditor import CKEditor
+from flask_ckeditor import CKEditor, CKEditorField
 import os
 from datetime import datetime
 from sqlalchemy.exc import OperationalError
@@ -37,6 +37,9 @@ class MyAdminIndexView(AdminIndexView):
         return redirect(url_for('main.login'))
 
 class ModelAdminView(ModelView):
+    extra_js = [
+        '//cdn.ckeditor.com/4.16.2/standard/ckeditor.js'
+    ]
     def is_accessible(self):
         return current_user.is_authenticated and getattr(current_user, 'is_admin', False)
 
@@ -91,6 +94,9 @@ from app.models.category import Category
 class CategoryAdminView(ModelAdminView):
     column_list = ('id', 'title', 'slug', 'link', 'bg_color', 'description', 'created_at')
     form_columns = ('title', 'slug', 'link', 'bg_color', 'description')
+    form_overrides = {
+        'description': CKEditorField
+    }
 
 # Project Admin
 from app.models.project import Project
@@ -100,20 +106,10 @@ class ProjectAdminView(ModelAdminView):
     form_extra_fields = {
         'background_image_file': FileUploadField('Background Image', base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS),
     }
+    form_overrides = {
+        'description': CKEditorField
+    }
 
-    def on_model_change(self, form, model, is_created):
-        upload_folder = current_app.config['UPLOAD_FOLDER']
-        self._ensure_upload_folder(upload_folder)
-        if form.background_image_file.data:
-            filename = secure_filename(form.background_image_file.data.filename)
-            file_path = os.path.join(upload_folder, filename)
-            form.background_image_file.data.save(file_path)
-            model.background_image_url = f'/Uploads/{filename}'
-        if not model.background_image_url and is_created:
-            raise ValueError("Background image required")
-
-# Blog Admin
-from app.models.blog import Blog
 class BlogAdminView(ModelAdminView):
     column_list = ('id', 'title', 'description', 'image_url', 'additional_images', 'date', 'read_time', 'link', 'created_at')
     form_columns = ('title', 'description', 'image_file', 'additional_images_files', 'date', 'read_time', 'link')
@@ -121,26 +117,9 @@ class BlogAdminView(ModelAdminView):
         'image_file': FileUploadField('Main Image', base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS),
         'additional_images_files': MultipleFileUploadField('Additional Images', base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS)
     }
-
-    def on_model_change(self, form, model, is_created):
-        upload_folder = current_app.config['UPLOAD_FOLDER']
-        self._ensure_upload_folder(upload_folder)
-        if form.image_file.data:
-            filename = secure_filename(form.image_file.data.filename)
-            file_path = os.path.join(upload_folder, filename)
-            form.image_file.data.save(file_path)
-            model.image_url = f'/Uploads/{filename}'
-        if form.additional_images_files.data:
-            additional_images = []
-            for file in form.additional_images_files.data:
-                if file and allowed_file(file.filename):
-                    filename = secure_filename(file.filename)
-                    file_path = os.path.join(upload_folder, filename)
-                    file.save(file_path)
-                    additional_images.append(f'/Uploads/{filename}')
-            model.additional_images = ','.join(additional_images) if additional_images else None
-        if not model.image_url and is_created:
-            raise ValueError("Main image required")
+    form_overrides = {
+        'description': CKEditorField
+    }
 
 # Client Admin
 from app.models.client import Client
@@ -173,6 +152,9 @@ from app.models.about import About, AboutItem
 class AboutAdminView(ModelAdminView):
     column_list = ('id', 'title', 'description')
     form_columns = ('title', 'description')
+    form_overrides = {
+        'description': CKEditorField
+    }
 
 # AboutItem Admin (элементы about.items)
 class AboutItemAdminView(ModelAdminView):
@@ -181,15 +163,9 @@ class AboutItemAdminView(ModelAdminView):
     form_extra_fields = {
         'background_image_file': FileUploadField('Background Image', base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS),
     }
-
-    def on_model_change(self, form, model, is_created):
-        upload_folder = current_app.config['UPLOAD_FOLDER']
-        self._ensure_upload_folder(upload_folder)
-        if form.background_image_file.data:
-            filename = secure_filename(form.background_image_file.data.filename)
-            file_path = os.path.join(upload_folder, filename)
-            form.background_image_file.data.save(file_path)
-            model.background_image_url = f'/Uploads/{filename}'
+    form_overrides = {
+        'description': CKEditorField
+    }
 
 # Service Admin
 from app.models.service import Service
@@ -272,6 +248,9 @@ class PartnerAdminView(ModelAdminView):
             allowed_extensions=ALLOWED_EXTENSIONS
         )
     }
+    form_overrides = {
+        'description': CKEditorField
+    }
 
     def on_model_change(self, form, model, is_created):
         upload_folder = current_app.config['UPLOAD_FOLDER']
@@ -353,7 +332,7 @@ def create_app():
 
     from app.models.contact_request import ContactRequest
     from app.models.partner import Partner
-
+    from app.models.blog import Blog
     admin = Admin(app, name='Admin Panel', template_mode='bootstrap3', index_view=MyAdminIndexView())
     admin.add_view(BannerAdminView(Banner, db.session))
     admin.add_view(ProjectAdminView(Project, db.session))
