@@ -66,8 +66,14 @@ class ModelAdminView(ModelView):
 # Banner Admin
 from app.models.banner import Banner
 class BannerAdminView(ModelAdminView):
-    column_list = ('id', 'title', 'subtitle', 'image_url', 'logo_url', 'button_text', 'button_link', 'created_at')
-    form_columns = ('title', 'subtitle', 'image_file', 'logo_file', 'button_text', 'button_link')
+    column_list = (
+        'id', 'title_ru', 'title_en', 'subtitle_ru', 'subtitle_en',
+        'image_url', 'logo_url', 'button_text_ru', 'button_text_en', 'button_link', 'created_at'
+    )
+    form_columns = (
+        'title_ru', 'title_en', 'subtitle_ru', 'subtitle_en',
+        'image_file', 'logo_file', 'button_text_ru', 'button_text_en', 'button_link'
+    )
     form_extra_fields = {
         'image_file': FileUploadField('Banner Image', base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS),
         'logo_file': FileUploadField('Logo', base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS)
@@ -92,34 +98,67 @@ class BannerAdminView(ModelAdminView):
 # Category Admin
 from app.models.category import Category
 class CategoryAdminView(ModelAdminView):
-    column_list = ('id', 'title', 'slug', 'link', 'bg_color', 'description', 'created_at')
-    form_columns = ('title', 'slug', 'link', 'bg_color', 'description')
+    column_list = ('id', 'title_ru', 'title_en', 'slug', 'link', 'bg_color', 'description_ru', 'description_en', 'created_at')
+    form_columns = ('title_ru', 'title_en', 'slug', 'link', 'bg_color', 'description_ru', 'description_en')
     form_overrides = {
-        'description': CKEditorField
+        'description_ru': CKEditorField,
+        'description_en': CKEditorField
     }
 
 # Project Admin
 from app.models.project import Project
 class ProjectAdminView(ModelAdminView):
-    column_list = ('id', 'title', 'description', 'background_image_url', 'button_text', 'button_link', 'color', 'type', 'created_at')
-    form_columns = ('title', 'description', 'background_image_file', 'button_text', 'button_link', 'deliverables', 'color', 'type', 'categories')
+    column_list = (
+        'id', 'title_ru', 'title_en', 'description_ru', 'description_en',
+        'background_image_url', 'button_text_ru', 'button_text_en', 'button_link',
+        'deliverables_ru', 'deliverables_en', 'color', 'type', 'created_at'
+    )
+    form_columns = (
+        'title_ru', 'title_en', 'description_ru', 'description_en',
+        'background_image_file', 'button_text_ru', 'button_text_en', 'button_link',
+        'deliverables_ru', 'deliverables_en', 'color', 'type', 'categories'
+    )
     form_extra_fields = {
         'background_image_file': FileUploadField('Background Image', base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS),
     }
     form_overrides = {
-        'description': CKEditorField
+        'description_ru': CKEditorField,
+        'description_en': CKEditorField,
+        'deliverables_ru': CKEditorField,
+        'deliverables_en': CKEditorField
     }
 
+# Blog Admin
+from app.models.blog import Blog
 class BlogAdminView(ModelAdminView):
-    column_list = ('id', 'title', 'description', 'image_url', 'additional_images', 'date', 'read_time', 'link', 'created_at')
-    form_columns = ('title', 'description', 'image_file', 'additional_images_files', 'date', 'read_time', 'link')
+    column_list = (
+        'id', 'title_ru', 'title_en', 'description_ru', 'description_en',
+        'image_url', 'date', 'created_at'
+    )
+    form_columns = (
+        'title_ru', 'title_en', 'description_ru', 'description_en',
+        'image_file', 'date'
+    )
     form_extra_fields = {
-        'image_file': FileUploadField('Main Image', base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS),
-        'additional_images_files': MultipleFileUploadField('Additional Images', base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS)
+        'image_file': FileUploadField(
+            'Main Image',
+            base_path=lambda: current_app.config['UPLOAD_FOLDER'],
+            allowed_extensions=ALLOWED_EXTENSIONS
+        )
     }
     form_overrides = {
-        'description': CKEditorField
+        'description_ru': CKEditorField,
+        'description_en': CKEditorField
     }
+
+    def on_model_change(self, form, model, is_created):
+        upload_folder = current_app.config['UPLOAD_FOLDER']
+        self._ensure_upload_folder(upload_folder)
+        if form.image_file.data:
+            filename = secure_filename(form.image_file.data.filename)
+            file_path = os.path.join(upload_folder, filename)
+            form.image_file.data.save(file_path)
+            model.image_url = f'/Uploads/{filename}'
 
 # Client Admin
 from app.models.client import Client
@@ -147,31 +186,46 @@ class ClientAdminView(ModelAdminView):
         if not model.logo_url and is_created:
             raise ValueError("Client logo required")
 
-# About Admin (основная информация)
+# About Admin
 from app.models.about import About, AboutItem
 class AboutAdminView(ModelAdminView):
-    column_list = ('id', 'title', 'description')
-    form_columns = ('title', 'description')
+    column_list = ('id', 'title_ru', 'title_en', 'description_ru', 'description_en')
+    form_columns = ('title_ru', 'title_en', 'description_ru', 'description_en')
     form_overrides = {
-        'description': CKEditorField
+        'description_ru': CKEditorField,
+        'description_en': CKEditorField
     }
 
-# AboutItem Admin (элементы about.items)
 class AboutItemAdminView(ModelAdminView):
-    column_list = ('id', 'about_id', 'title', 'description', 'background_image_url', 'button_text', 'button_link', 'color', 'type', 'created_at')
-    form_columns = ('about_id', 'title', 'description', 'background_image_file', 'button_text', 'button_link', 'deliverables', 'color', 'type', 'categories', 'created_at')
+    column_list = (
+        'id', 'about_id', 'title_ru', 'title_en', 'description_ru', 'description_en',
+        'background_image_url', 'button_text_ru', 'button_text_en', 'button_link',
+        'deliverables_ru', 'deliverables_en', 'color', 'type', 'created_at'
+    )
+    form_columns = (
+        'about_id', 'title_ru', 'title_en', 'description_ru', 'description_en',
+        'background_image_file', 'button_text_ru', 'button_text_en', 'button_link',
+        'deliverables_ru', 'deliverables_en', 'color', 'type', 'categories', 'created_at'
+    )
     form_extra_fields = {
         'background_image_file': FileUploadField('Background Image', base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS),
     }
     form_overrides = {
-        'description': CKEditorField
+        'description_ru': CKEditorField,
+        'description_en': CKEditorField,
+        'deliverables_ru': CKEditorField,
+        'deliverables_en': CKEditorField
     }
 
 # Service Admin
 from app.models.service import Service
 class ServiceAdminView(ModelAdminView):
-    column_list = ('id', 'content', 'created_at', 'category_id')
-    form_columns = ('content', 'category', 'projects', 'blogs')
+    column_list = ('id', 'content_ru', 'content_en', 'created_at', 'category_id')
+    form_columns = ('content_ru', 'content_en', 'category', 'projects', 'blogs')
+    form_overrides = {
+        'content_ru': CKEditorField,
+        'content_en': CKEditorField
+    }
 
 # Portfolio PDF Admin
 from app.models.portfolio_pdf import PortfolioPDF
@@ -200,8 +254,14 @@ class PortfolioPDFAdminView(ModelAdminView):
 # Work Admin
 from app.models.work import Work
 class WorkAdminView(ModelAdminView):
-    column_list = ('id', 'title', 'content', 'image_url', 'button_text', 'button_link', 'created_at')
-    form_columns = ('title', 'content', 'image_file', 'button_text', 'button_link')
+    column_list = (
+        'id', 'title_ru', 'title_en', 'content_ru', 'content_en',
+        'image_url', 'button_text_ru', 'button_text_en', 'button_link', 'created_at'
+    )
+    form_columns = (
+        'title_ru', 'title_en', 'content_ru', 'content_en',
+        'image_file', 'button_text_ru', 'button_text_en', 'button_link'
+    )
     form_extra_fields = {
         'image_file': FileUploadField('Work Image', base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS),
     }
@@ -239,8 +299,8 @@ class ContactAdminView(ModelAdminView):
 # Partner Admin
 from app.models.partner import Partner
 class PartnerAdminView(ModelAdminView):
-    column_list = ('id', 'name', 'logo_url', 'description', 'created_at')
-    form_columns = ('name', 'logo_file', 'description')
+    column_list = ('id', 'name_ru', 'name_en', 'logo_url', 'description_ru', 'description_en', 'created_at')
+    form_columns = ('name_ru', 'name_en', 'logo_file', 'description_ru', 'description_en')
     form_extra_fields = {
         'logo_file': FileUploadField(
             'Logo',
@@ -249,7 +309,8 @@ class PartnerAdminView(ModelAdminView):
         )
     }
     form_overrides = {
-        'description': CKEditorField
+        'description_ru': CKEditorField,
+        'description_en': CKEditorField
     }
 
     def on_model_change(self, form, model, is_created):
@@ -365,4 +426,4 @@ def create_app():
     return app
 
 if __name__ == '__main__':
-    app = create_app()
+    app =create_app()

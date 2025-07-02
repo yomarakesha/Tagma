@@ -1,5 +1,6 @@
 ﻿from app import db
 from datetime import datetime
+from flask_babel import get_locale
 
 service_blog = db.Table(
     'service_blog',
@@ -15,19 +16,19 @@ service_project = db.Table(
 
 class Service(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    content = db.Column(db.Text)
+    content_ru = db.Column(db.Text)
+    content_en = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    # связь с категорией
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
     category = db.relationship('Category', backref='services')
-    # проекты и блоги
     projects = db.relationship('Project', secondary=service_project, backref='services')
     blogs = db.relationship('Blog', secondary=service_blog, backref='services')
 
     def to_dict(self):
+        locale = str(get_locale()) or 'en'
         return {
             'id': self.id,
-            'content': self.content,
+            'content': getattr(self, f'content_{locale}', self.content_en),
             'category': self.category.to_dict() if self.category else None,
             'projects': [p.to_dict() for p in self.projects],
             'blogs': [b.to_dict() for b in self.blogs],
