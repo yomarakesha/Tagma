@@ -1,29 +1,17 @@
-FROM python:3.11-slim
+# Используем Python 3.10 (или 3.11)
+FROM python:3.10-slim
 
-# Установим системные зависимости
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    libpq-dev \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
-
-# Установим рабочую директорию
+# Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Скопируем зависимости и установим их
-COPY requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
-
-# Скопируем весь проект
+# Копируем файлы проекта
 COPY . .
 
-# Откроем порт (если нужно)
-EXPOSE 5000
+# Устанавливаем зависимости
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Переменные окружения для Flask
-ENV FLASK_APP=app
-ENV FLASK_RUN_HOST=0.0.0.0
-ENV FLASK_ENV=production
+# Открываем порт
+EXPOSE 8000
 
-# Команда запуска
-CMD ["flask", "run"]
+# Запускаем Gunicorn
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8000", "wsgi:app"]

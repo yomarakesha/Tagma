@@ -85,6 +85,9 @@ def get_contact():
         'status': 'success',
         'data': contact.to_dict()
     })
+@main_bp.route('/Uploads/<path:filename>')
+def uploaded_file(filename):
+    return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
 
 @main_bp.route('/api/about')
 def get_about():

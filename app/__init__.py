@@ -18,6 +18,8 @@ import errno
 import stat
 import logging
 import tempfile
+from flask_admin.form import Select2Widget
+from wtforms_sqlalchemy.fields import QuerySelectField
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -113,11 +115,6 @@ class ProjectAdminView(ModelAdminView):
         'background_image_url', 'button_text_ru', 'button_text_en', 'button_link',
         'deliverables_ru', 'deliverables_en', 'color', 'type', 'created_at'
     )
-    form_columns = (
-        'title_ru', 'title_en', 'description_ru', 'description_en',
-        'background_image_file', 'button_text_ru', 'button_text_en', 'button_link',
-        'deliverables_ru', 'deliverables_en', 'color', 'type', 'categories'
-    )
     form_extra_fields = {
         'background_image_file': FileUploadField('Background Image', base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS),
     }
@@ -127,6 +124,15 @@ class ProjectAdminView(ModelAdminView):
         'deliverables_ru': CKEditorField,
         'deliverables_en': CKEditorField
     }
+
+    def on_model_change(self, form, model, is_created):
+        upload_folder = current_app.config['UPLOAD_FOLDER']
+        self._ensure_upload_folder(upload_folder)
+        if form.background_image_file.data:
+            filename = secure_filename(form.background_image_file.data.filename)
+            file_path = os.path.join(upload_folder, filename)
+            form.background_image_file.data.save(file_path)
+            model.background_image_url = f'/Uploads/{filename}'
 
 # Blog Admin
 from app.models.blog import Blog
@@ -205,7 +211,7 @@ class AboutItemAdminView(ModelAdminView):
     form_columns = (
         'about_id', 'title_ru', 'title_en', 'description_ru', 'description_en',
         'background_image_file', 'button_text_ru', 'button_text_en', 'button_link',
-        'deliverables_ru', 'deliverables_en', 'color', 'type', 'categories', 'created_at'
+        'deliverables_ru', 'deliverables_en', 'color', 'type', 'categories'
     )
     form_extra_fields = {
         'background_image_file': FileUploadField('Background Image', base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS),
@@ -217,14 +223,34 @@ class AboutItemAdminView(ModelAdminView):
         'deliverables_en': CKEditorField
     }
 
+    def on_model_change(self, form, model, is_created):
+        upload_folder = current_app.config['UPLOAD_FOLDER']
+        self._ensure_upload_folder(upload_folder)
+        if form.background_image_file.data:
+            filename = secure_filename(form.background_image_file.data.filename)
+            file_path = os.path.join(upload_folder, filename)
+            form.background_image_file.data.save(file_path)
+            model.background_image_url = f'/Uploads/{filename}'
+
 # Service Admin
 from app.models.service import Service
+
 class ServiceAdminView(ModelAdminView):
-    column_list = ('id', 'content_ru', 'content_en', 'created_at', 'category_id')
-    form_columns = ('content_ru', 'content_en', 'category', 'projects', 'blogs')
+    form_columns = ('content_ru', 'content_en', 'category')
+
     form_overrides = {
         'content_ru': CKEditorField,
-        'content_en': CKEditorField
+        'content_en': CKEditorField,
+        'category': QuerySelectField
+    }
+
+    form_args = {
+        'category': {
+            'query_factory': lambda: Category.query.all(),
+            'get_label': lambda c: c.title_ru,
+            'allow_blank': False,
+            'widget': Select2Widget()
+        }
     }
 
 # Portfolio PDF Admin
@@ -243,6 +269,7 @@ class PortfolioPDFAdminView(ModelAdminView):
     }
     def on_model_change(self, form, model, is_created):
         upload_folder = current_app.config['UPLOAD_FOLDER']
+        self._ensure_upload_folder(upload_folder)
         if form.pdf_file.data:
             filename = secure_filename(form.pdf_file.data.filename)
             file_path = os.path.join(upload_folder, filename)
@@ -394,36 +421,37 @@ def create_app():
     from app.models.contact_request import ContactRequest
     from app.models.partner import Partner
     from app.models.blog import Blog
-    admin = Admin(app, name='Admin Panel', template_mode='bootstrap3', index_view=MyAdminIndexView())
-    admin.add_view(BannerAdminView(Banner, db.session))
-    admin.add_view(ProjectAdminView(Project, db.session))
-    admin.add_view(CategoryAdminView(Category, db.session))
-    admin.add_view(BlogAdminView(Blog, db.session))
-    admin.add_view(ClientAdminView(Client, db.session))
-    admin.add_view(ServiceAdminView(Service, db.session))
-    admin.add_view(AboutAdminView(About, db.session))
-    admin.add_view(AboutItemAdminView(AboutItem, db.session, name="About Items"))
-    admin.add_view(PortfolioPDFAdminView(PortfolioPDF, db.session, name="Company Portfolio PDF"))
-    admin.add_view(ModelAdminView(ContactRequest, db.session, name="Contact Requests"))
-    admin.add_view(PartnerAdminView(Partner, db.session, name="Partners"))
-    admin.add_view(WorkAdminView(Work, db.session, name="Works"))
-    admin.add_view(UserAdminView(User, db.session, name="Users"))
-    # admin.add_view(ContactAdminView(Contact, db.session, name="Контакты"))  # Удалено из админки
+    from app.models.banner import Banner
+    from app.models.category import Category
+    from app.models.project import Project
+    from app.models.client import Client
+    from app.models.about import About, AboutItem
+    from app.models.service import Service
+    from app.models.portfolio_pdf import PortfolioPDF
+    from app.models.work import Work
 
-    with app.app_context():
-        admin.add_link(MenuLink(name=_('Logout'), url='/logout'))
+    admin = Admin(app, name='AdminPanel', template_mode='bootstrap4', index_view=MyAdminIndexView())
 
-    from app.api.resources import init_api
-    init_api(app)
+    admin.add_view(BannerAdminView(Banner, db.session, category='Content'))
+    admin.add_view(CategoryAdminView(Category, db.session, category='Content'))
+    admin.add_view(ProjectAdminView(Project, db.session, category='Content'))
+    admin.add_view(BlogAdminView(Blog, db.session, category='Content'))
+    admin.add_view(ClientAdminView(Client, db.session, category='Content'))
+    admin.add_view(AboutAdminView(About, db.session, category='Content'))
+    admin.add_view(AboutItemAdminView(AboutItem, db.session, category='Content'))
+    admin.add_view(ServiceAdminView(Service, db.session, category='Content'))
+    admin.add_view(PortfolioPDFAdminView(PortfolioPDF, db.session, category='Content'))
+    admin.add_view(WorkAdminView(Work, db.session, category='Content'))
+    admin.add_view(UserAdminView(User, db.session, category='Users'))
+    admin.add_view(ContactAdminView(Contact, db.session, category='Contacts'))
+    admin.add_view(PartnerAdminView(Partner, db.session, category='Content'))
+
+    admin.add_link(MenuLink(name='Return to site', url='/'))
 
     with app.app_context():
         try:
             db.create_all()
-            app.logger.info("All tables created")
         except OperationalError as e:
-            app.logger.error(f"Ошибка инициализации данных: {str(e)}")
+            app.logger.error(f"Ошибка при создании БД: {e}")
 
     return app
-
-if __name__ == '__main__':
-    app =create_app()
