@@ -94,10 +94,32 @@ def services():
         db.session.commit()
 
         return jsonify({'status': 'success', 'data': service.to_dict()}), 201
+@main_bp.route('/api/partners')
+def get_partners():
+    partners = Partner.query.all()
+    return jsonify({'status': 'success', 'data': [p.to_dict() for p in partners]})
 
+@main_bp.route('/api/portfolio')
+def get_portfolio():
+    pdfs = PortfolioPDF.query.all()
+    return jsonify({'status': 'success', 'data': [p.to_dict() for p in pdfs]})
 @main_bp.route('/Uploads/<path:filename>')
 def uploaded_file(filename):
     return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
+@main_bp.route('/api/contact-request', methods=['POST'])
+def submit_contact_request():
+    data = request.get_json()
+
+    required_fields = ['full_name', 'email', 'phone', 'message']
+    missing = [field for field in required_fields if not data.get(field)]
+    if missing:
+        return jsonify({'status': 'error', 'message': f"Missing fields: {', '.join(missing)}"}), 400
+
+    contact = ContactRequest.from_dict(data)
+    db.session.add(contact)
+    db.session.commit()
+
+    return jsonify({'status': 'success', 'data': contact.to_dict()}), 201
 
 @main_bp.route('/api/reviews')
 def get_reviews():
