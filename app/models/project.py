@@ -21,7 +21,7 @@ class Project(db.Model):
     deliverables_ru = db.Column(db.Text)
     deliverables_en = db.Column(db.Text)
     color = db.Column(db.String(32))
-    type = db.Column(db.String(64))
+    type = db.Column(db.String(64))  # project или work
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     categories = db.relationship('Category', secondary=project_category, backref=db.backref('projects', lazy='dynamic'))

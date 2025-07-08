@@ -1,4 +1,4 @@
-﻿from flask import Blueprint, jsonify, render_template, request, redirect, url_for, flash, session, send_from_directory, current_app
+﻿from flask import Blueprint, jsonify, render_template, request, redirect, url_for, flash, session, send_from_directory, current_app, abort
 from flask_login import login_user, logout_user, login_required
 from flask_babel import _
 from app.models.banner import Banner
@@ -19,6 +19,7 @@ from app.models.partner import Partner
 from app.models.portfolio_pdf import PortfolioPDF
 from app.models.work import Work
 import os
+from flask_babel import get_locale
 
 main_bp = Blueprint('main', __name__)
 
@@ -56,17 +57,47 @@ def get_clients():
 def get_categories():
     categories = Category.query.all()
     return jsonify({
-    'status': 'success',
-    'data': [category.to_dict() for category in categories]
-})
-
-@main_bp.route('/api/services')
-def get_services():
-    services = Service.query.all()
-    return jsonify({
         'status': 'success',
-        'data': [service.to_dict() for service in services]
+        'data': [category.to_dict() for category in categories]
     })
+
+@main_bp.route('/api/services', methods=['GET', 'POST'])
+def services():
+    if request.method == 'GET':
+        services = Service.query.all()
+        return jsonify({
+            'status': 'success',
+            'data': [service.to_dict() for service in services]
+        })
+    elif request.method == 'POST':
+        data = request.get_json()
+        if not data:
+            return jsonify({'status': 'error', 'message': 'No input data'}), 400
+
+        service_id = data.get('id')
+        if service_id:
+            service = Service.query.get(service_id)
+            if not service:
+                return jsonify({'status': 'error', 'message': 'Service not found'}), 404
+        else:
+            service = Service()
+
+        locale = str(get_locale()) or 'en'
+        content_field = f'content_{locale}'
+
+        setattr(service, content_field, data.get('content', ''))
+        service.category_id = data.get('category_id')
+
+        # TODO: обработка связей projects и blogs если нужно
+
+        db.session.add(service)
+        db.session.commit()
+
+        return jsonify({'status': 'success', 'data': service.to_dict()}), 201
+
+@main_bp.route('/Uploads/<path:filename>')
+def uploaded_file(filename):
+    return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
 
 @main_bp.route('/api/reviews')
 def get_reviews():
@@ -85,9 +116,6 @@ def get_contact():
         'status': 'success',
         'data': contact.to_dict()
     })
-@main_bp.route('/Uploads/<path:filename>')
-def uploaded_file(filename):
-    return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
 
 @main_bp.route('/api/about')
 def get_about():
@@ -118,166 +146,67 @@ def logout():
     logout_user()
     return redirect(url_for('main.login'))
 
-@main_bp.route('/project/<slug>')
-def project_detail(slug):
-    project = Project.query.filter_by(button_link=f'/project/{slug}').first_or_404()
-    return render_template('project.html', project=project)
+# --- API блогов ---
 
-@main_bp.route('/about')
-def about():
-    about = About.query.first()
-    if not about:
-        flash(_('No about information found'))
-        return redirect(url_for('main.index'))
-    return render_template('about.html', about=about, title=_('About Us'))
-
-@main_bp.route('/contact/step1', methods=['GET', 'POST'])
-def contact_step1():
-    form = Step1Form()
-    if form.validate_on_submit():
-        contact = ContactRequest(
-            full_name=form.full_name.data,
-            company_name=form.company_name.data,
-            email=form.email.data,
-            phone=form.phone.data,
-            subject=form.subject.data,
-            message=form.message.data
-        )
-        db.session.add(contact)
-        db.session.commit()
-        session['contact_request_id'] = contact.id
-        return redirect(url_for('main.contact_step2'))
-    return render_template('contact/step1.html', form=form)
-
-@main_bp.route('/contact/step2', methods=['GET', 'POST'])
-def contact_step2():
-    form = Step2Form()
-    contact_id = session.get('contact_request_id')
-    if not contact_id:
-        return redirect(url_for('main.contact_step1'))
-    contact = ContactRequest.query.get(contact_id)
-    if form.validate_on_submit():
-        contact.meeting_date = form.meeting_date.data
-        contact.meeting_time = form.meeting_time.data
-        contact.timezone = form.timezone.data
-        db.session.commit()
-        return redirect(url_for('main.contact_step3'))
-    return render_template('contact/step2.html', form=form)
-
-@main_bp.route('/contact/step3', methods=['GET', 'POST'])
-def contact_step3():
-    form = Step3Form()
-    contact_id = session.get('contact_request_id')
-    if not contact_id:
-        return redirect(url_for('main.contact_step1'))
-    contact = ContactRequest.query.get(contact_id)
-    if form.validate_on_submit():
-        contact.terms_accepted = form.terms_accepted.data
-        db.session.commit()
-        session.pop('contact_request_id', None)
-        flash('Your request has been submitted!', 'success')
-        return redirect(url_for('main.contact_step1'))
-    return render_template('contact/step3.html', form=form)
-
-@main_bp.route('/api/contact-request', methods=['POST'])
-def api_contact_request():
-    data = request.get_json()
-    # Преобразуем строку в date
-    meeting_date = data.get('meeting_date')
-    if meeting_date:
-        try:
-            meeting_date = datetime.strptime(meeting_date, "%Y-%m-%d").date()
-        except Exception:
-            meeting_date = None
-
-    contact = ContactRequest(
-        full_name=data.get('full_name'),
-        company_name=data.get('company_name'),
-        email=data.get('email'),
-        phone=data.get('phone'),
-        subject=data.get('subject'),
-        message=data.get('message'),
-        meeting_date=meeting_date,
-        meeting_time=data.get('meeting_time'),
-        timezone=data.get('timezone'),
-        terms_accepted=data.get('terms_accepted', False)
-    )
-    db.session.add(contact)
-    db.session.commit()
-    return jsonify({'status': 'success', 'id': contact.id}), 201
-
-@main_bp.route('/api/partners')
-def get_partners():
-    partners = Partner.query.all()
-    return jsonify({
-        'status': 'success',
-        'data': [
-            {
-                'name': p.name,
-                'logo_url': p.logo_url,
-                'description': p.description
-            } for p in partners
-        ]
-    })
-
-@main_bp.route('/blogs', methods=['GET'])
+@main_bp.route('/blog/', methods=['GET'])
 def blogs_list():
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
     search = request.args.get('search', '').strip()
+
     query = Blog.query
     if search:
         query = query.filter(
             (Blog.title_ru.ilike(f'%{search}%')) |
-            (Blog.title_en.ilike(f'%{search}%')) |
-            (Blog.title_tk.ilike(f'%{search}%'))
+            (Blog.title_en.ilike(f'%{search}%'))
         )
-    blogs = query.order_by(Blog.created_at.desc()).all()
+    pagination = query.order_by(Blog.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    blogs = pagination.items
+
     return jsonify({
         'status': 'success',
+        'page': page,
+        'per_page': per_page,
+        'total': pagination.total,
+        'pages': pagination.pages,
         'data': [blog.to_dict() for blog in blogs]
     })
 
-@main_bp.route('/api/download-company-portfolio', methods=['GET'])
-def download_company_portfolio():
-    upload_folder = current_app.config['UPLOAD_FOLDER']
-    filename = 'company_portfolio.pdf'
-    return send_from_directory(upload_folder, filename, as_attachment=True)
+@main_bp.route('/blog/<int:id>', methods=['GET'])
+def blog_detail(id):
+    blog = Blog.query.get_or_404(id)
+    return jsonify({'status': 'success', 'data': blog.to_dict()})
 
-@main_bp.route('/api/portfolio-pdf', methods=['GET'])
-def get_portfolio_pdf():
-    pdf = PortfolioPDF.query.order_by(PortfolioPDF.id.desc()).first()
-    if not pdf:
-        return jsonify({'status': 'error', 'message': 'No portfolio PDF found'}), 404
-    return jsonify({'status': 'success', 'data': pdf.to_dict()})
+# --- API проектов и работ (объединены) ---
+@main_bp.route('/api/projects', methods=['POST'])
+def create_or_update_project():
+    # Просто перенаправить на существующий обработчик для projects_works
+    return create_or_update_project_work()
 
-@main_bp.route('/api/portfolio-pdf/download', methods=['GET'])
-def download_portfolio_pdf():
-    pdf = PortfolioPDF.query.order_by(PortfolioPDF.id.desc()).first()
-    if not pdf or not pdf.pdf_file:
-        return jsonify({'status': 'error', 'message': 'No portfolio PDF found'}), 404
-    upload_folder = current_app.config['UPLOAD_FOLDER']
-    filename = os.path.basename(pdf.pdf_file)
-    return send_from_directory(upload_folder, filename, as_attachment=True)
+@main_bp.route('/api/projects', methods=['GET'])
+def projects_works_list():
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    search = request.args.get('search', '').strip()
 
-@main_bp.route('/works', methods=['GET'])
-def works_list():
-    works = Work.query.all()
+    query = Project.query.filter(Project.type.in_(['project', 'work']))
+    if search:
+        query = query.filter(
+            (Project.title_ru.ilike(f'%{search}%')) |
+            (Project.title_en.ilike(f'%{search}%'))
+        )
+    pagination = query.order_by(Project.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    items = pagination.items
+
     return jsonify({
         'status': 'success',
-        'data': [work.to_dict() for work in works]
+        'page': page,
+        'per_page': per_page,
+        'total': pagination.total,
+        'pages': pagination.pages,
+        'data': [item.to_dict() for item in items]
     })
-
-
-@main_bp.route('/works/<string:type>/<int:id>', methods=['GET'])
-def work_detail(type, id):
-    work = Work.query.filter_by(type=type, id=id).first_or_404()
-    return jsonify({'status': 'success', 'data': work.to_dict()})
-
-@main_bp.route('/works/<int:id>', methods=['GET'])
-def work_by_id(id):
-    work = Work.query.get_or_404(id)
-    return jsonify({'status': 'success', 'data': work.to_dict()})
-
-@main_bp.route('/blogs/<slug>', methods=['GET'])
-def blog_detail(slug):
-    blog = Blog.query.filter_by(slug=slug).first_or_404()
-    return jsonify({'status': 'success', 'data': blog.to_dict()})
+@main_bp.route('/api/projects/<int:id>', methods=['GET'])
+def project_work_detail(id):
+    item = Project.query.get_or_404(id)
+    return jsonify({'status': 'success', 'data': item.to_dict()})

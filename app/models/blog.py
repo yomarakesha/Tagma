@@ -15,7 +15,7 @@ class Blog(db.Model):
     read_time = db.Column(db.String(50))
     link = db.Column(db.String(255))
     slug = db.Column(db.String(255), unique=True)
-    tags = db.Column(PickleType)  # или JSON, если используете PostgreSQL
+    tags = db.Column(PickleType)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):

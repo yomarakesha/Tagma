@@ -13,7 +13,7 @@ from datetime import datetime
 from sqlalchemy.exc import OperationalError
 from werkzeug.utils import secure_filename
 from app.utils.file_upload import FileUploadField, MultipleFileUploadField
-from wtforms import validators, PasswordField
+from wtforms import validators, StringField
 import errno
 import stat
 import logging
@@ -25,6 +25,7 @@ db = SQLAlchemy()
 migrate = Migrate()
 babel = Babel()
 ckeditor = CKEditor()
+login_manager = LoginManager()
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
 
@@ -42,6 +43,7 @@ class ModelAdminView(ModelView):
     extra_js = [
         '//cdn.ckeditor.com/4.16.2/standard/ckeditor.js'
     ]
+
     def is_accessible(self):
         return current_user.is_authenticated and getattr(current_user, 'is_admin', False)
 
@@ -310,12 +312,12 @@ class UserAdminView(ModelAdminView):
     column_list = ('id', 'username', 'is_admin', 'created_at')
     form_columns = ('username', 'password', 'is_admin')
     form_extra_fields = {
-        'password': PasswordField('Password')
+        'password': StringField('Password')
     }
 
     def on_model_change(self, form, model, is_created):
         if form.password.data:
-            model.set_password(form.password.data)
+            model.password_hash = form.password.data
 
 # Contact Admin
 from app.models.contact import Contact
@@ -405,13 +407,11 @@ def create_app():
     migrate.init_app(app, db)
     babel.init_app(app, locale_selector=get_locale_from_request)
     ckeditor.init_app(app)
+    login_manager.init_app(app)
+    login_manager.login_view = 'main.login'
 
     from app.routes.main import main_bp
     app.register_blueprint(main_bp)
-
-    login_manager = LoginManager()
-    login_manager.init_app(app)
-    login_manager.login_view = 'main.login'
 
     from app.models.user import User
     @login_manager.user_loader
@@ -429,29 +429,32 @@ def create_app():
     from app.models.service import Service
     from app.models.portfolio_pdf import PortfolioPDF
     from app.models.work import Work
+    from app.models.contact import Contact
 
-    admin = Admin(app, name='AdminPanel', template_mode='bootstrap4', index_view=MyAdminIndexView())
+    admin = Admin(app, index_view=MyAdminIndexView(), template_mode='bootstrap4')
 
-    admin.add_view(BannerAdminView(Banner, db.session, category='Content'))
-    admin.add_view(CategoryAdminView(Category, db.session, category='Content'))
-    admin.add_view(ProjectAdminView(Project, db.session, category='Content'))
-    admin.add_view(BlogAdminView(Blog, db.session, category='Content'))
-    admin.add_view(ClientAdminView(Client, db.session, category='Content'))
-    admin.add_view(AboutAdminView(About, db.session, category='Content'))
-    admin.add_view(AboutItemAdminView(AboutItem, db.session, category='Content'))
-    admin.add_view(ServiceAdminView(Service, db.session, category='Content'))
-    admin.add_view(PortfolioPDFAdminView(PortfolioPDF, db.session, category='Content'))
-    admin.add_view(WorkAdminView(Work, db.session, category='Content'))
-    admin.add_view(UserAdminView(User, db.session, category='Users'))
-    admin.add_view(ContactAdminView(Contact, db.session, category='Contacts'))
-    admin.add_view(PartnerAdminView(Partner, db.session, category='Content'))
+    admin.add_view(BannerAdminView(Banner, db.session, name=_('Banner')))
+    admin.add_view(CategoryAdminView(Category, db.session, name=_('Category')))
+    admin.add_view(ProjectAdminView(Project, db.session, name=_('Project')))
+    admin.add_view(BlogAdminView(Blog, db.session, name=_('Blog')))
+    admin.add_view(ClientAdminView(Client, db.session, name=_('Client')))
+    admin.add_view(AboutAdminView(About, db.session, name=_('About')))
+    admin.add_view(AboutItemAdminView(AboutItem, db.session, name=_('About Item')))
+    admin.add_view(ServiceAdminView(Service, db.session, name=_('Service')))
+    admin.add_view(PortfolioPDFAdminView(PortfolioPDF, db.session, name=_('Portfolio PDF')))
+    admin.add_view(WorkAdminView(Work, db.session, name=_('Work')))
+    admin.add_view(UserAdminView(User, db.session, name=_('User')))
+    admin.add_view(ContactAdminView(Contact, db.session, name=_('Contact')))
+    admin.add_view(PartnerAdminView(Partner, db.session, name=_('Partner')))
 
-    admin.add_link(MenuLink(name='Return to site', url='/'))
+    admin.add_link(MenuLink(name=_('Go to Website'), url='/'))
+    admin.add_link(MenuLink(name=_('Logout'), url='/logout'))
 
     with app.app_context():
         try:
             db.create_all()
+            app.logger.info("База данных инициализирована успешно.")
         except OperationalError as e:
-            app.logger.error(f"Ошибка при создании БД: {e}")
+            app.logger.error(f"Ошибка при инициализации базы данных: {str(e)}")
 
     return app

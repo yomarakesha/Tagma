@@ -1,6 +1,7 @@
 from app import db
 from datetime import datetime
 from sqlalchemy.types import PickleType
+from flask_babel import get_locale
 
 class Work(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -8,8 +9,8 @@ class Work(db.Model):
     title_en = db.Column(db.String(255), nullable=False)
     description_ru = db.Column(db.Text)
     description_en = db.Column(db.Text)
-    tags_ru = db.Column(PickleType)      # список тегов на русском
-    tags_en = db.Column(PickleType)      # список тегов на английском
+    tags_ru = db.Column(PickleType)
+    tags_en = db.Column(PickleType)
     main_image = db.Column(db.String(255))
     content_ru = db.Column(db.Text)
     content_en = db.Column(db.Text)
@@ -23,7 +24,6 @@ class Work(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
-        from flask_babel import get_locale
         locale = str(get_locale()) or 'en'
         return {
             'id': self.id,
