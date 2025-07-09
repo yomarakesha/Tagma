@@ -1,0 +1,27 @@
+[Unit]
+Description=Tagma Flask App (Gunicorn)
+After=network.target
+
+[Service]
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/Tagma
+
+# Load environment variables
+#EnvironmentFile=/home/ubuntu/Tagma/.env
+# Or fallback inline (optional)
+Environment="SECRET_KEY=tagmasecret"
+
+# Activate venv and run Gunicorn
+ExecStart=/home/ubuntu/Tagma/venv/bin/gunicorn \
+    --workers 4 \
+    --bind 127.0.0.1:5000 \
+    run:app
+
+# Restart policy
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+
