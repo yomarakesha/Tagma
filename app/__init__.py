@@ -307,19 +307,36 @@ class WorkAdminView(ModelAdminView):
             raise ValueError("Work image required")
 
 # User Admin
-from app.models.user import User
-class UserAdminView(ModelAdminView):
+from flask_admin.contrib.sqla import ModelView
+from wtforms import PasswordField
+from wtforms.validators import DataRequired, Optional
+from flask_admin.contrib.sqla import ModelView
+from wtforms import PasswordField
+from wtforms.validators import DataRequired, Optional
+
+class UserAdminView(ModelView):
     column_list = ('id', 'username', 'is_admin', 'created_at')
-    form_columns = ('username', 'password', 'is_admin')
-    form_extra_fields = {
-        'password': StringField('Password')
-    }
+    form_columns = ('username', 'is_admin')  # НЕ включай password сюда — его нет в модели
+
+    def scaffold_form(self):
+        form_class = super().scaffold_form()
+        form_class.password = PasswordField('Password')
+        return form_class
+
+    def create_form(self):
+        form = super().create_form()
+        form.password.validators = [DataRequired()]
+        return form
+
+    def edit_form(self, obj=None):
+        form = super().edit_form(obj)
+        form.password.validators = [Optional()]
+        return form
 
     def on_model_change(self, form, model, is_created):
         if form.password.data:
-            model.password_hash = form.password.data
+            model.password_hash = form.password.data  # без шифрования
 
-# Contact Admin
 from app.models.contact import Contact
 class ContactAdminView(ModelAdminView):
     column_list = ('id', 'phone', 'address_ru', 'address_tk', 'address_en', 'email', 'social_media', 'created_at')
