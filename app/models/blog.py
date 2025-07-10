@@ -23,10 +23,11 @@ class Blog(db.Model):
         return {
             'id': self.id,
             'title': getattr(self, f'title_{locale}', self.title_en),
-            'slug': self.slug,
+            'description': getattr(self, f'description_{locale}', self.description_en),
             'image_url': self.image_url,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'read_time': int(self.read_time) if self.read_time and self.read_time.isdigit() else self.read_time,
-            'tags': self.tags or [],
-            'description': getattr(self, f'description_{locale}', self.description_en)
+            'additional_images': self.additional_images,  # если это строка с JSON — можно преобразовать через json.loads
+            'date': self.date.isoformat() if self.date else None,
+            'read_time': self.read_time or "3 min read",  # fallback если None
+            'link': self.link or self.slug or "",
+            'created_at': self.created_at.isoformat() if self.created_at else None
         }

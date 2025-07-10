@@ -111,36 +111,48 @@ class CategoryAdminView(ModelAdminView):
 
 # Project Admin
 from app.models.project import Project
+from wtforms import SelectField
 class ProjectAdminView(ModelAdminView):
     column_list = (
         'id', 'title_ru', 'title_en', 'description_ru', 'description_en',
-        'background_image_url', 'button_text_ru', 'button_text_en', 'button_link',
-        'deliverables_ru', 'deliverables_en', 'color', 'type', 'created_at'
+        'main_image', 'bg_color', 'type', 'created_at'
     )
+
     form_columns = (
-    'title_ru', 'title_en', 'description_ru', 'description_en',
-    'background_image_file', 'button_text_ru', 'button_text_en', 'button_link',
-    'deliverables_ru', 'deliverables_en', 'color', 'type', 'categories'
-)
+        'title_ru', 'title_en', 'description_ru', 'description_en',
+        'main_image_file', 'content_ru', 'content_en',
+        'tags_ru', 'tags_en', 'images', 'bg_color', 'type', 'categories'
+    )
 
     form_extra_fields = {
-        'background_image_file': FileUploadField('Background Image', base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS),
+        'main_image_file': FileUploadField(
+            'Main Image',
+            base_path=lambda: current_app.config['UPLOAD_FOLDER'],
+            allowed_extensions=ALLOWED_EXTENSIONS
+        )
     }
+
     form_overrides = {
         'description_ru': CKEditorField,
         'description_en': CKEditorField,
         'deliverables_ru': CKEditorField,
-        'deliverables_en': CKEditorField
+        'deliverables_en': CKEditorField,
+        'type': SelectField
     }
-
+    form_args = {
+        'type': {
+            'choices': [('branding', 'Branding'), ('others', 'Others')],
+            'label': 'Тип проекта'
+        }
+    }
     def on_model_change(self, form, model, is_created):
         upload_folder = current_app.config['UPLOAD_FOLDER']
         self._ensure_upload_folder(upload_folder)
-        if form.background_image_file.data:
-            filename = secure_filename(form.background_image_file.data.filename)
+        if form.main_image_file.data:
+            filename = secure_filename(form.main_image_file.data.filename)
             file_path = os.path.join(upload_folder, filename)
-            form.background_image_file.data.save(file_path)
-            model.background_image_url = f'/Uploads/{filename}'
+            form.main_image_file.data.save(file_path)
+            model.main_image = f'/Uploads/{filename}'
 
 # Blog Admin
 from app.models.blog import Blog
