@@ -117,6 +117,12 @@ class ProjectAdminView(ModelAdminView):
         'background_image_url', 'button_text_ru', 'button_text_en', 'button_link',
         'deliverables_ru', 'deliverables_en', 'color', 'type', 'created_at'
     )
+    form_columns = (
+    'title_ru', 'title_en', 'description_ru', 'description_en',
+    'background_image_file', 'button_text_ru', 'button_text_en', 'button_link',
+    'deliverables_ru', 'deliverables_en', 'color', 'type', 'categories'
+)
+
     form_extra_fields = {
         'background_image_file': FileUploadField('Background Image', base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS),
     }
@@ -145,7 +151,7 @@ class BlogAdminView(ModelAdminView):
     )
     form_columns = (
         'title_ru', 'title_en', 'description_ru', 'description_en',
-        'image_file', 'date'
+        'image_file', 'date', 'created_at'
     )
     form_extra_fields = {
         'image_file': FileUploadField(
