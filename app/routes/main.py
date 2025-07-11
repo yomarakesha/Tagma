@@ -17,7 +17,6 @@ from app import db
 from datetime import datetime
 from app.models.partner import Partner
 from app.models.portfolio_pdf import PortfolioPDF
-from app.models.work import Work
 import os
 from flask_babel import get_locale
 
@@ -52,41 +51,6 @@ def get_clients():
         'status': 'success',
         'data': [client.to_dict() for client in clients]
     })
-@main_bp.route('/api/works', methods=['GET'])
-def works_list():
-    page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 10, type=int)
-    search = request.args.get('search', '').strip()
-
-    query = Work.query
-
-    if search:
-        query = query.filter(
-            (Work.title_ru.ilike(f'%{search}%')) |
-            (Work.title_en.ilike(f'%{search}%'))
-        )
-
-    pagination = query.order_by(Work.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
-    works = pagination.items
-
-    return jsonify({
-        'status': 'success',
-        'page': page,
-        'per_page': per_page,
-        'total': pagination.total,
-        'pages': pagination.pages,
-        'data': [w.to_dict() for w in works]
-    })
-
-
-@main_bp.route('/api/works/<int:id>', methods=['GET'])
-def work_detail(id):
-    work = Work.query.get_or_404(id)
-    return jsonify({
-        'status': 'success',
-        'data': work.to_dict()
-    })
-
 @main_bp.route('/api/categories')
 def get_categories():
     categories = Category.query.all()

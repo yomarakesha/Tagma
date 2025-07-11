@@ -112,11 +112,14 @@ class CategoryAdminView(ModelAdminView):
 # Project Admin
 from app.models.project import Project
 from wtforms import SelectField
+
 class ProjectAdminView(ModelAdminView):
     column_list = (
         'id', 'title_ru', 'title_en', 'description_ru', 'description_en',
         'main_image', 'bg_color', 'type', 'created_at'
     )
+    column_filters = ["categories.id"]  # оставляем, но теперь категории будут отображаться как "ID 1"
+
 
     form_columns = (
         'title_ru', 'title_en', 'description_ru', 'description_en',
@@ -176,7 +179,7 @@ class BlogAdminView(ModelAdminView):
         'description_ru': CKEditorField,
         'description_en': CKEditorField
     }
-
+    column_searchable_list = ['title_ru', 'title_en', 'description_ru', 'description_en']
     def on_model_change(self, form, model, is_created):
         upload_folder = current_app.config['UPLOAD_FOLDER']
         self._ensure_upload_folder(upload_folder)
@@ -298,31 +301,6 @@ class PortfolioPDFAdminView(ModelAdminView):
         elif is_created:
             raise ValueError("PDF-файл обязателен")
 
-# Work Admin
-from app.models.work import Work
-class WorkAdminView(ModelAdminView):
-    column_list = (
-        'id', 'title_ru', 'title_en', 'content_ru', 'content_en',
-        'image_url', 'button_text_ru', 'button_text_en', 'button_link', 'created_at'
-    )
-    form_columns = (
-        'title_ru', 'title_en', 'content_ru', 'content_en',
-        'image_file', 'button_text_ru', 'button_text_en', 'button_link'
-    )
-    form_extra_fields = {
-        'image_file': FileUploadField('Work Image', base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS),
-    }
-
-    def on_model_change(self, form, model, is_created):
-        upload_folder = current_app.config['UPLOAD_FOLDER']
-        self._ensure_upload_folder(upload_folder)
-        if form.image_file.data:
-            filename = secure_filename(form.image_file.data.filename)
-            file_path = os.path.join(upload_folder, filename)
-            form.image_file.data.save(file_path)
-            model.image_url = f'/Uploads/{filename}'
-        if not model.image_url and is_created:
-            raise ValueError("Work image required")
 
 # User Admin
 from flask_admin.contrib.sqla import ModelView
@@ -463,7 +441,6 @@ def create_app():
     from app.models.about import About, AboutItem
     from app.models.service import Service
     from app.models.portfolio_pdf import PortfolioPDF
-    from app.models.work import Work
     from app.models.contact import Contact
 
     admin = Admin(app, index_view=MyAdminIndexView(), template_mode='bootstrap4')
@@ -477,7 +454,6 @@ def create_app():
     admin.add_view(AboutItemAdminView(AboutItem, db.session, name=_('About Item')))
     admin.add_view(ServiceAdminView(Service, db.session, name=_('Service')))
     admin.add_view(PortfolioPDFAdminView(PortfolioPDF, db.session, name=_('Portfolio PDF')))
-    admin.add_view(WorkAdminView(Work, db.session, name=_('Work')))
     admin.add_view(UserAdminView(User, db.session, name=_('User')))
     admin.add_view(ContactAdminView(Contact, db.session, name=_('Contact')))
     admin.add_view(PartnerAdminView(Partner, db.session, name=_('Partner')))

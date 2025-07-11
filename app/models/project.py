@@ -33,12 +33,12 @@ class Project(db.Model):
     # Ограничение на значения типа
     @validates('type')
     def validate_type(self, key, value):
-        if value not in ['branding', 'ozers']:
-            raise ValueError("Тип проекта должен быть 'branding' или 'ozers'")
+        if value not in ['branding', 'others']:
+            raise ValueError("Тип проекта должен быть 'branding' или 'others'")
         return value
 
     __table_args__ = (
-        CheckConstraint("type IN ('branding', 'ozers')", name='check_project_type'),
+        CheckConstraint("type IN ('branding', 'others')", name='check_project_type'),
     )
 
     def to_dict(self):

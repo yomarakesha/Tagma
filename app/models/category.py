@@ -24,3 +24,5 @@ class Category(db.Model):
             'description': getattr(self, f'description_{locale}', self.description_en),
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
+    def __str__(self):
+        return f"ID {self.id}"
