@@ -109,17 +109,18 @@ class CategoryAdminView(ModelAdminView):
         'description_en': CKEditorField
     }
 
-# Project Admin
-from app.models.project import Project
-from wtforms import SelectField
+from wtforms.fields import SelectField
+from wtforms.widgets import Select
+from wtforms_sqlalchemy.fields import QuerySelectMultipleField
 
+class PlainSelectField(SelectField):
+    widget = Select()
 class ProjectAdminView(ModelAdminView):
     column_list = (
         'id', 'title_ru', 'title_en', 'description_ru', 'description_en',
         'main_image', 'bg_color', 'type', 'created_at'
     )
-    column_filters = ["categories.id"]  # оставляем, но теперь категории будут отображаться как "ID 1"
-
+    column_filters = ["categories.id"]
 
     form_columns = (
         'title_ru', 'title_en', 'description_ru', 'description_en',
@@ -140,12 +141,18 @@ class ProjectAdminView(ModelAdminView):
         'description_en': CKEditorField,
         'deliverables_ru': CKEditorField,
         'deliverables_en': CKEditorField,
-        'type': SelectField
+        'type': PlainSelectField,
+        'categories': QuerySelectMultipleField,
     }
     form_args = {
         'type': {
             'choices': [('branding', 'Branding'), ('others', 'Others')],
-            'label': 'Тип проекта'
+            'label': 'Тип проекта',
+        },
+        'categories': {
+            'query_factory': lambda: Category.query.order_by(Category.title_ru),
+            'get_label': 'title_ru',
+            'allow_blank': True,
         }
     }
     def on_model_change(self, form, model, is_created):
@@ -256,7 +263,9 @@ class AboutItemAdminView(ModelAdminView):
             model.background_image_url = f'/Uploads/{filename}'
 
 # Service Admin
-from app.models.service import Service
+from wtforms_sqlalchemy.fields import QuerySelectField
+from flask_ckeditor import CKEditorField
+from app.models.category import Category
 
 class ServiceAdminView(ModelAdminView):
     form_columns = ('content_ru', 'content_en', 'category')
@@ -264,7 +273,7 @@ class ServiceAdminView(ModelAdminView):
     form_overrides = {
         'content_ru': CKEditorField,
         'content_en': CKEditorField,
-        'category': QuerySelectField
+        'category': QuerySelectField,
     }
 
     form_args = {
@@ -272,7 +281,6 @@ class ServiceAdminView(ModelAdminView):
             'query_factory': lambda: Category.query.all(),
             'get_label': lambda c: c.title_ru,
             'allow_blank': False,
-            'widget': Select2Widget()
         }
     }
 
@@ -303,36 +311,32 @@ class PortfolioPDFAdminView(ModelAdminView):
 
 
 # User Admin
-from flask_admin.contrib.sqla import ModelView
-from wtforms import PasswordField
-from wtforms.validators import DataRequired, Optional
+
 from flask_admin.contrib.sqla import ModelView
 from wtforms import PasswordField
 from wtforms.validators import DataRequired, Optional
 
 class UserAdminView(ModelView):
     column_list = ('id', 'username', 'is_admin', 'created_at')
-    form_columns = ('username', 'is_admin')  # НЕ включай password сюда — его нет в модели
-
-    def scaffold_form(self):
-        form_class = super().scaffold_form()
-        form_class.password = PasswordField('Password')
-        return form_class
+    form_columns = ('username', 'is_admin', 'password_input')
+    form_excluded_columns = ('password_hash',)
+    
+    form_extra_fields = {
+        'password_input': PasswordField('Password', validators=[DataRequired()])
+    }
 
     def create_form(self):
-        form = super().create_form()
-        form.password.validators = [DataRequired()]
-        return form
+        return super().create_form()
 
     def edit_form(self, obj=None):
         form = super().edit_form(obj)
-        form.password.validators = [Optional()]
+        if hasattr(form, 'password_input'):
+            form.password_input.validators = [Optional()]
         return form
 
     def on_model_change(self, form, model, is_created):
-        if form.password.data:
-            model.password_hash = form.password.data  # без шифрования
-
+        if form.password_input.data:
+            model.set_password(form.password_input.data)
 from app.models.contact import Contact
 class ContactAdminView(ModelAdminView):
     column_list = ('id', 'phone', 'address_ru', 'address_tk', 'address_en', 'email', 'social_media', 'created_at')
@@ -451,7 +455,7 @@ def create_app():
     admin.add_view(BlogAdminView(Blog, db.session, name=_('Blog')))
     admin.add_view(ClientAdminView(Client, db.session, name=_('Client')))
     admin.add_view(AboutAdminView(About, db.session, name=_('About')))
-    admin.add_view(AboutItemAdminView(AboutItem, db.session, name=_('About Item')))
+    # admin.add_view(AboutItemAdminView(AboutItem, db.session, name=_('About Item')))
     admin.add_view(ServiceAdminView(Service, db.session, name=_('Service')))
     admin.add_view(PortfolioPDFAdminView(PortfolioPDF, db.session, name=_('Portfolio PDF')))
     admin.add_view(UserAdminView(User, db.session, name=_('User')))

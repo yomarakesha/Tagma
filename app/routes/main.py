@@ -168,7 +168,7 @@ def logout():
 
 # --- API блогов ---
 
-@main_bp.route('/blog/', methods=['GET'])
+@main_bp.route('/api/blog/', methods=['GET'])
 def blogs_list():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
@@ -192,7 +192,7 @@ def blogs_list():
         'data': [blog.to_dict() for blog in blogs]
     })
 
-@main_bp.route('/blog/<int:id>', methods=['GET'])
+@main_bp.route('/api/blog/<int:id>', methods=['GET'])
 def blog_detail(id):
     blog = Blog.query.get_or_404(id)
     return jsonify({'status': 'success', 'data': blog.to_dict()})
