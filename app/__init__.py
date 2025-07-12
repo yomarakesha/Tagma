@@ -112,6 +112,12 @@ class CategoryAdminView(ModelAdminView):
 from wtforms.fields import SelectField
 from wtforms.widgets import Select
 from wtforms_sqlalchemy.fields import QuerySelectMultipleField
+from wtforms_sqlalchemy.fields import QuerySelectMultipleField as BaseQuerySelectMultipleField
+class CompatibleQuerySelectMultipleField(BaseQuerySelectMultipleField):
+    def iter_choices(self):
+        for choice in super().iter_choices():
+            yield choice[:3]  # Обрезаем до (value, label, selected)
+
 
 class PlainSelectField(SelectField):
     widget = Select()
@@ -142,7 +148,7 @@ class ProjectAdminView(ModelAdminView):
         'deliverables_ru': CKEditorField,
         'deliverables_en': CKEditorField,
         'type': PlainSelectField,
-        'categories': QuerySelectMultipleField,
+        'categories': CompatibleQuerySelectMultipleField,
     }
     form_args = {
         'type': {
@@ -263,17 +269,23 @@ class AboutItemAdminView(ModelAdminView):
             model.background_image_url = f'/Uploads/{filename}'
 
 # Service Admin
-from wtforms_sqlalchemy.fields import QuerySelectField
+from flask_admin.contrib.sqla import ModelView
 from flask_ckeditor import CKEditorField
 from app.models.category import Category
 
-class ServiceAdminView(ModelAdminView):
+# Используем кастомный класс с совместимостью
+class CompatibleQuerySelectField(QuerySelectField):
+    def iter_choices(self):
+        for choice in super().iter_choices():
+            yield choice[:3]
+
+class ServiceAdminView(ModelView):
     form_columns = ('content_ru', 'content_en', 'category')
 
     form_overrides = {
         'content_ru': CKEditorField,
         'content_en': CKEditorField,
-        'category': QuerySelectField,
+        'category': CompatibleQuerySelectField,  # <-- здесь
     }
 
     form_args = {
@@ -283,6 +295,10 @@ class ServiceAdminView(ModelAdminView):
             'allow_blank': False,
         }
     }
+
+    def on_model_change(self, form, model, is_created):
+        print("form.category.data:", form.category.data)
+        print("type:", type(form.category.data))
 
 # Portfolio PDF Admin
 from app.models.portfolio_pdf import PortfolioPDF
@@ -298,6 +314,7 @@ class PortfolioPDFAdminView(ModelAdminView):
             'validators': [validators.DataRequired()]
         }
     }
+
     def on_model_change(self, form, model, is_created):
         upload_folder = current_app.config['UPLOAD_FOLDER']
         self._ensure_upload_folder(upload_folder)
@@ -311,32 +328,23 @@ class PortfolioPDFAdminView(ModelAdminView):
 
 
 # User Admin
-
-from flask_admin.contrib.sqla import ModelView
 from wtforms import PasswordField
-from wtforms.validators import DataRequired, Optional
 
-class UserAdminView(ModelView):
+class UserAdminView(ModelAdminView):
     column_list = ('id', 'username', 'is_admin', 'created_at')
-    form_columns = ('username', 'is_admin', 'password_input')
-    form_excluded_columns = ('password_hash',)
-    
+    form_columns = ('username', 'password', 'is_admin')
+
     form_extra_fields = {
-        'password_input': PasswordField('Password', validators=[DataRequired()])
+        'password': PasswordField('Пароль')
     }
 
-    def create_form(self):
-        return super().create_form()
-
-    def edit_form(self, obj=None):
-        form = super().edit_form(obj)
-        if hasattr(form, 'password_input'):
-            form.password_input.validators = [Optional()]
-        return form
-
     def on_model_change(self, form, model, is_created):
-        if form.password_input.data:
-            model.set_password(form.password_input.data)
+        if form.password.data:
+            model.set_password(form.password.data)
+        elif is_created:
+            raise ValueError("Пароль обязателен для нового пользователя")
+
+
 from app.models.contact import Contact
 class ContactAdminView(ModelAdminView):
     column_list = ('id', 'phone', 'address_ru', 'address_tk', 'address_en', 'email', 'social_media', 'created_at')
@@ -446,6 +454,7 @@ def create_app():
     from app.models.service import Service
     from app.models.portfolio_pdf import PortfolioPDF
     from app.models.contact import Contact
+    from app.models.user import User
 
     admin = Admin(app, index_view=MyAdminIndexView(), template_mode='bootstrap4')
 
@@ -461,7 +470,6 @@ def create_app():
     admin.add_view(UserAdminView(User, db.session, name=_('User')))
     admin.add_view(ContactAdminView(Contact, db.session, name=_('Contact')))
     admin.add_view(PartnerAdminView(Partner, db.session, name=_('Partner')))
-
     admin.add_link(MenuLink(name=_('Go to Website'), url='/'))
     admin.add_link(MenuLink(name=_('Logout'), url='/logout'))
 
