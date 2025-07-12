@@ -279,13 +279,13 @@ class CompatibleQuerySelectField(QuerySelectField):
         for choice in super().iter_choices():
             yield choice[:3]
 
-class ServiceAdminView(ModelView):
+class ServiceAdminView(ModelAdminView):  # 👈 заменили ModelView на ModelAdminView
     form_columns = ('content_ru', 'content_en', 'category')
 
     form_overrides = {
         'content_ru': CKEditorField,
         'content_en': CKEditorField,
-        'category': CompatibleQuerySelectField,  # <-- здесь
+        'category': CompatibleQuerySelectField,
     }
 
     form_args = {
@@ -299,6 +299,7 @@ class ServiceAdminView(ModelView):
     def on_model_change(self, form, model, is_created):
         print("form.category.data:", form.category.data)
         print("type:", type(form.category.data))
+
 
 # Portfolio PDF Admin
 from app.models.portfolio_pdf import PortfolioPDF
