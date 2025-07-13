@@ -126,20 +126,28 @@ class ProjectAdminView(ModelAdminView):
         'id', 'title_ru', 'title_en', 'description_ru', 'description_en',
         'main_image', 'bg_color', 'type', 'created_at'
     )
-    column_filters = ["categories.id"]
+    column_filters = ["categories.title_ru"]
+
 
     form_columns = (
         'title_ru', 'title_en', 'description_ru', 'description_en',
         'main_image_file', 'content_ru', 'content_en',
         'tags_ru', 'tags_en', 'images', 'bg_color', 'type', 'categories'
     )
+    form_columns += ('images_files',)
 
     form_extra_fields = {
         'main_image_file': FileUploadField(
             'Main Image',
             base_path=lambda: current_app.config['UPLOAD_FOLDER'],
             allowed_extensions=ALLOWED_EXTENSIONS
+        ),
+        'images_files': MultipleFileUploadField(
+         'Доп. изображения',
+        base_path=lambda: current_app.config['UPLOAD_FOLDER'],
+        allowed_extensions=ALLOWED_EXTENSIONS
         )
+
     }
 
     form_overrides = {
@@ -169,38 +177,71 @@ class ProjectAdminView(ModelAdminView):
             file_path = os.path.join(upload_folder, filename)
             form.main_image_file.data.save(file_path)
             model.main_image = f'/Uploads/{filename}'
+        if form.images_files.data:
+            filenames = []
+            for img in form.images_files.data:
+                filename = secure_filename(img.filename)
+                path = os.path.join(upload_folder, filename)
+                img.save(path)
+                filenames.append(f'/Uploads/{filename}')
+            model.images = filenames
 
 # Blog Admin
+from flask_admin.contrib.sqla import ModelView
+from flask_ckeditor import CKEditorField
 from app.models.blog import Blog
+from app.utils.file_upload import FileUploadField, MultipleFileUploadField
+from werkzeug.utils import secure_filename
+import os
+
 class BlogAdminView(ModelAdminView):
     column_list = (
         'id', 'title_ru', 'title_en', 'description_ru', 'description_en',
         'image_url', 'date', 'created_at'
     )
-    form_columns = (
-        'title_ru', 'title_en', 'description_ru', 'description_en',
-        'image_file', 'date', 'created_at'
-    )
+
     form_extra_fields = {
         'image_file': FileUploadField(
             'Main Image',
             base_path=lambda: current_app.config['UPLOAD_FOLDER'],
             allowed_extensions=ALLOWED_EXTENSIONS
+        ),
+        'additional_images_files': MultipleFileUploadField(
+            'Доп. изображения',
+            base_path=lambda: current_app.config['UPLOAD_FOLDER'],
+            allowed_extensions=ALLOWED_EXTENSIONS
         )
     }
+
+    form_columns = (
+        'title_ru', 'title_en', 'description_ru', 'description_en',
+        'image_file', 'additional_images_files', 'date', 'created_at'
+    )
+
     form_overrides = {
         'description_ru': CKEditorField,
         'description_en': CKEditorField
     }
-    column_searchable_list = ['title_ru', 'title_en', 'description_ru', 'description_en']
+
     def on_model_change(self, form, model, is_created):
         upload_folder = current_app.config['UPLOAD_FOLDER']
         self._ensure_upload_folder(upload_folder)
+
         if form.image_file.data:
             filename = secure_filename(form.image_file.data.filename)
-            file_path = os.path.join(upload_folder, filename)
-            form.image_file.data.save(file_path)
+            path = os.path.join(upload_folder, filename)
+            form.image_file.data.save(path)
             model.image_url = f'/Uploads/{filename}'
+
+        if form.additional_images_files.data:
+            filenames = []
+            for img in form.additional_images_files.data:
+                filename = secure_filename(img.filename)
+                path = os.path.join(upload_folder, filename)
+                img.save(path)
+                filenames.append(f'/Uploads/{filename}')
+            model.additional_images = filenames
+
 
 # Client Admin
 from app.models.client import Client
@@ -278,14 +319,16 @@ class CompatibleQuerySelectField(QuerySelectField):
     def iter_choices(self):
         for choice in super().iter_choices():
             yield choice[:3]
-
+from app.models.project import Project
+from app.models.blog import Blog
 class ServiceAdminView(ModelAdminView):  # 👈 заменили ModelView на ModelAdminView
-    form_columns = ('content_ru', 'content_en', 'category')
+    form_columns = ('content_ru', 'content_en', 'category', 'projects', 'blogs')
 
     form_overrides = {
         'content_ru': CKEditorField,
         'content_en': CKEditorField,
         'category': CompatibleQuerySelectField,
+        
     }
 
     form_args = {
@@ -295,6 +338,23 @@ class ServiceAdminView(ModelAdminView):  # 👈 заменили ModelView на 
             'allow_blank': False,
         }
     }
+    form_overrides.update({
+    'projects': CompatibleQuerySelectMultipleField,
+    'blogs': CompatibleQuerySelectMultipleField
+})
+
+    form_args.update({
+        'projects': {
+            'query_factory': lambda: Project.query.order_by(Project.title_ru).all(),
+            'get_label': 'title_ru',
+            'allow_blank': True
+        },
+        'blogs': {
+            'query_factory': lambda: Blog.query.order_by(Blog.title_ru).all(),
+            'get_label': 'title_ru',
+            'allow_blank': True
+        }
+    })
 
     def on_model_change(self, form, model, is_created):
         print("form.category.data:", form.category.data)

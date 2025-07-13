@@ -10,7 +10,7 @@ class Blog(db.Model):
     description_ru = db.Column(db.Text)
     description_en = db.Column(db.Text)
     image_url = db.Column(db.String(255))
-    additional_images = db.Column(db.Text)
+    additional_images = db.Column(db.PickleType)
     date = db.Column(db.Date)
     read_time = db.Column(db.String(50))
     link = db.Column(db.String(255))
