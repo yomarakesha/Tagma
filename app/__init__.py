@@ -20,6 +20,8 @@ import logging
 import tempfile
 from flask_admin.form import Select2Widget
 from wtforms_sqlalchemy.fields import QuerySelectField
+from wtforms import TextAreaField
+
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -121,13 +123,15 @@ class CompatibleQuerySelectMultipleField(BaseQuerySelectMultipleField):
 
 class PlainSelectField(SelectField):
     widget = Select()
+from wtforms import TextAreaField
+from app.models.project import Project
+from app.utils.image_preview import MultipleImagePreviewField
 class ProjectAdminView(ModelAdminView):
     column_list = (
         'id', 'title_ru', 'title_en', 'description_ru', 'description_en',
         'main_image', 'bg_color', 'type', 'created_at'
     )
     column_filters = ["categories.title_ru"]
-
 
     form_columns = (
         'title_ru', 'title_en', 'description_ru', 'description_en',
@@ -143,12 +147,17 @@ class ProjectAdminView(ModelAdminView):
             allowed_extensions=ALLOWED_EXTENSIONS
         ),
         'images_files': MultipleFileUploadField(
-         'Доп. изображения',
-        base_path=lambda: current_app.config['UPLOAD_FOLDER'],
-        allowed_extensions=ALLOWED_EXTENSIONS
-        )
-
+            'Доп. изображения',
+            base_path=lambda: current_app.config['UPLOAD_FOLDER'],
+            allowed_extensions=ALLOWED_EXTENSIONS
+        ),
+        'existing_images_preview': MultipleImagePreviewField('Загруженные изображения', existing_images=[]),
     }
+
+    def on_form_prefill(self, form, id):
+        project = self.model.query.get(id)
+        if project and project.images:
+            form.existing_images_preview.existing_images = project.images
 
     form_overrides = {
         'description_ru': CKEditorField,
@@ -169,23 +178,34 @@ class ProjectAdminView(ModelAdminView):
             'allow_blank': True,
         }
     }
+
     def on_model_change(self, form, model, is_created):
         upload_folder = current_app.config['UPLOAD_FOLDER']
         self._ensure_upload_folder(upload_folder)
+        
+        # Проверяем существование папки
+        if not os.path.exists(upload_folder):
+            current_app.logger.error(f"Папка загрузки не существует: {upload_folder}")
+            raise ValueError(f"Папка загрузки не существует: {upload_folder}")
+        
+        current_app.logger.info(f"Путь к папке загрузки: {upload_folder}")
+        
         if form.main_image_file.data:
             filename = secure_filename(form.main_image_file.data.filename)
             file_path = os.path.join(upload_folder, filename)
+            current_app.logger.info(f"Сохранение основного изображения в: {file_path}")
             form.main_image_file.data.save(file_path)
             model.main_image = f'/Uploads/{filename}'
+        
         if form.images_files.data:
             filenames = []
             for img in form.images_files.data:
                 filename = secure_filename(img.filename)
-                path = os.path.join(upload_folder, filename)
-                img.save(path)
+                file_path = os.path.join(upload_folder, filename)
+                current_app.logger.info(f"Сохранение дополнительного изображения в: {file_path}")
+                img.save(file_path)
                 filenames.append(f'/Uploads/{filename}')
             model.images = filenames
-
 # Blog Admin
 from flask_admin.contrib.sqla import ModelView
 from flask_ckeditor import CKEditorField
@@ -458,12 +478,12 @@ def create_app():
     app.config['SESSION_COOKIE_SECURE'] = False
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-    app.config['UPLOAD_FOLDER'] = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Uploads'))
+    app.config['UPLOAD_FOLDER'] = os.path.normpath(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Uploads')))
     app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
     app.config['BABEL_DEFAULT_LOCALE'] = 'en'
     app.config['BABEL_DEFAULT_TIMEZONE'] = 'UTC'
     app.config['BABEL_TRANSLATION_DIRECTORIES'] = os.path.join(os.path.dirname(__file__), 'translations')
-
+    # ... остальная часть функции create_app остается без изменений ...
     logging.basicConfig(level=logging.INFO)
     app.logger.setLevel(logging.INFO)
 

@@ -97,7 +97,7 @@ def get_partners():
     partners = Partner.query.all()
     return jsonify({'status': 'success', 'data': [p.to_dict() for p in partners]})
 
-@main_bp.route('/api/portfolio')
+@main_bp.route('/api/portfolio_pdf')
 def get_portfolio():
     pdfs = PortfolioPDF.query.all()
     return jsonify({'status': 'success', 'data': [p.to_dict() for p in pdfs]})
@@ -136,6 +136,12 @@ def get_contact():
         'status': 'success',
         'data': contact.to_dict()
     })
+@main_bp.route('/api/portfolio_pdf', methods=['GET'])
+def get_latest_portfolio_pdf():
+    latest_pdf = PortfolioPDF.query.order_by(PortfolioPDF.created_at.desc()).first()
+    if not latest_pdf:
+        return jsonify({'status': 'error', 'message': 'No PDF found'}), 404
+    return jsonify({'status': 'success', 'data': latest_pdf.to_dict()})
 
 @main_bp.route('/api/about')
 def get_about():
@@ -208,6 +214,16 @@ def projects_works_list():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
     search = request.args.get('search', '').strip()
+    project_id = request.args.get('id', type=int)
+
+    if project_id:
+        query = query.filter(Project.id == project_id)
+
+    if search:
+        query = query.filter(
+            (Project.title_ru.ilike(f'%{search}%')) |
+            (Project.title_en.ilike(f'%{search}%'))
+        )
 
     query = Project.query
     pagination = query.order_by(Project.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
