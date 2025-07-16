@@ -115,11 +115,17 @@ from wtforms.fields import SelectField
 from wtforms.widgets import Select
 from wtforms_sqlalchemy.fields import QuerySelectMultipleField
 from wtforms_sqlalchemy.fields import QuerySelectMultipleField as BaseQuerySelectMultipleField
+from wtforms_sqlalchemy.fields import QuerySelectMultipleField as BaseQuerySelectMultipleField
+
+class CompatibleQuerySelectField(QuerySelectField):
+    def iter_choices(self):
+        for choice in super().iter_choices():
+            yield choice
+
 class CompatibleQuerySelectMultipleField(BaseQuerySelectMultipleField):
     def iter_choices(self):
         for choice in super().iter_choices():
-            yield choice[:3]  # Обрезаем до (value, label, selected)
-
+            yield choice[:3]
 
 class PlainSelectField(SelectField):
     widget = Select()
