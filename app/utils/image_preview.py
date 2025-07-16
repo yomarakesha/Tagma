@@ -1,26 +1,22 @@
 from wtforms import Field
 from markupsafe import Markup
-import json
 
 class MultipleImagePreviewField(Field):
-    def __init__(self, label='', validators=None, existing_images=None, **kwargs):
+    def __init__(self, label=None, validators=None, existing_images=None, **kwargs):
         super().__init__(label, validators, **kwargs)
         self.existing_images = existing_images or []
 
-    def process_formdata(self, valuelist):
-        if valuelist:
-            self.data = valuelist
-        else:
-            self.data = []
+    def _value(self):
+        return ''
 
-    def __call__(self, **kwargs):
-        html = ['<div style="max-height:150px;overflow:auto;border:1px solid #ccc;padding:5px">']
-        for idx, img_url in enumerate(self.existing_images):
+    def widget(self, field, **kwargs):
+        html = ['<div style="display:flex; flex-wrap:wrap; gap:10px">']
+        for image_url in self.existing_images:
+            image_id = image_url.split("/")[-1]
             html.append(f'''
-                <div style="margin-bottom:5px">
-                    <input type="checkbox" name="keep_image_{idx}" checked>
-                    <img src="{img_url}" style="height:50px; vertical-align:middle; margin-right:10px;">
-                    <input type="hidden" name="existing_image_{idx}" value="{img_url}">
+                <div style="position:relative;">
+                    <img src="{image_url}" style="height:80px; border:1px solid #ccc;"/>
+                    <a href="?remove_image={image_url}" style="position:absolute; top:0; right:0; background:#f00; color:#fff; padding:2px 5px; text-decoration:none;">×</a>
                 </div>
             ''')
         html.append('</div>')

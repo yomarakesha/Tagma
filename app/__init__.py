@@ -126,6 +126,7 @@ class PlainSelectField(SelectField):
 from wtforms import TextAreaField
 from app.models.project import Project
 from app.utils.image_preview import MultipleImagePreviewField
+
 class ProjectAdminView(ModelAdminView):
     column_list = (
         'id', 'title_ru', 'title_en', 'description_ru', 'description_en',
@@ -138,7 +139,7 @@ class ProjectAdminView(ModelAdminView):
         'main_image_file', 'content_ru', 'content_en',
         'tags_ru', 'tags_en', 'images', 'bg_color', 'type', 'categories'
     )
-    form_columns += ('images_files',)
+    form_columns += ('images_files', 'existing_images_preview')
 
     form_extra_fields = {
         'main_image_file': FileUploadField(
@@ -156,8 +157,24 @@ class ProjectAdminView(ModelAdminView):
 
     def on_form_prefill(self, form, id):
         project = self.model.query.get(id)
-        if project and project.images:
-            form.existing_images_preview.existing_images = project.images
+        if not project:
+            return
+
+        # Удаление изображения через query-параметр
+        remove_image_url = request.args.get('remove_image')
+        if remove_image_url and remove_image_url in project.images:
+            project.images.remove(remove_image_url)
+            try:
+                # Удаляем сам файл, если он существует
+                abs_path = os.path.join(current_app.root_path, remove_image_url.lstrip('/'))
+                if os.path.exists(abs_path):
+                    os.remove(abs_path)
+            except Exception as e:
+                current_app.logger.warning(f"Не удалось удалить файл: {e}")
+            db.session.commit()
+
+        # Обновлённый список
+        form.existing_images_preview.existing_images = project.images
 
     form_overrides = {
         'description_ru': CKEditorField,
