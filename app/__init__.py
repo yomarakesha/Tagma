@@ -483,6 +483,8 @@ class PartnerAdminView(ModelAdminView):
             raise ValueError("Logo image required")
 from app.models.contact_request import ContactRequest
 
+from app.models.contact_request import ContactRequest
+
 class ContactRequestAdmin(ModelAdminView):  # Можно наследовать от твоего базового ModelAdminView, чтобы соблюсти права доступа и стили
     can_create = False  # Запрет на создание через админку (если нужно)
     can_edit = False    # Запрет на редактирование (по желанию)
@@ -491,6 +493,7 @@ class ContactRequestAdmin(ModelAdminView):  # Можно наследовать 
     column_list = ('full_name', 'email', 'phone', 'subject', 'message', 'meeting_date', 'meeting_time', 'timezone', 'terms_accepted')
     column_searchable_list = ('full_name', 'email', 'phone', 'message')
     column_filters = ('meeting_date', 'terms_accepted')
+
 def get_locale_from_request():
     if has_request_context():
         lang = request.args.get('lang')
