@@ -103,7 +103,12 @@ def get_portfolio():
     return jsonify({'status': 'success', 'data': [p.to_dict() for p in pdfs]})
 @main_bp.route('/Uploads/<path:filename>')
 def uploaded_file(filename):
-    return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
+    return send_from_directory(
+        current_app.config['UPLOAD_FOLDER'],
+        filename,
+        as_attachment=True
+    )
+
 @main_bp.route('/api/contact-request', methods=['POST'])
 def submit_contact_request():
     data = request.get_json()
