@@ -1,13 +1,15 @@
-﻿from flask import Flask, redirect, url_for, request, has_request_context, current_app
+from flask import Flask, redirect, url_for, request, has_request_context, current_app
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user
 from flask_admin import Admin, AdminIndexView
+from flask_admin.base import expose
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.menu import MenuLink
 from flask_migrate import Migrate
 from flask_cors import CORS
 from flask_babel import Babel, _
 from flask_ckeditor import CKEditor, CKEditorField
+from markupsafe import Markup
 import os
 from datetime import datetime
 from sqlalchemy.exc import OperationalError
@@ -34,6 +36,7 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+
 class MyAdminIndexView(AdminIndexView):
     def is_accessible(self):
         return current_user.is_authenticated and getattr(current_user, 'is_admin', False)
@@ -41,13 +44,51 @@ class MyAdminIndexView(AdminIndexView):
     def inaccessible_callback(self, name, **kwargs):
         return redirect(url_for('main.login'))
 
+    @expose('/')
+    def index(self):
+        # Import models here to avoid circular imports
+        from app.models.banner import Banner
+        from app.models.project import Project
+        from app.models.blog import Blog
+        from app.models.category import Category
+        from app.models.client import Client
+        from app.models.service import Service
+        from app.models.partner import Partner
+        from app.models.contact_request import ContactRequest
+
+        try:
+            counts = {
+                'banners':    Banner.query.count(),
+                'projects':   Project.query.count(),
+                'blogs':      Blog.query.count(),
+                'categories': Category.query.count(),
+                'clients':    Client.query.count(),
+                'services':   Service.query.count(),
+                'partners':   Partner.query.count(),
+                'requests':   ContactRequest.query.count(),
+            }
+            recent = ContactRequest.query.order_by(ContactRequest.id.desc()).limit(8).all()
+        except Exception:
+            counts = {k: 0 for k in ('banners','projects','blogs','categories','clients','services','partners','requests')}
+            recent = []
+
+        return self.render('admin/index.html',
+                           admin_counts=counts,
+                           recent_requests=recent)
+
 class ModelAdminView(ModelView):
-    extra_js = [
-        '//cdn.ckeditor.com/4.16.2/standard/ckeditor.js'
-    ]
+    extra_js = []  # CKEditor served locally via CKEDITOR_SERVE_LOCAL
+    page_size = 25
+    can_set_page_size = True
 
     def is_accessible(self):
         return current_user.is_authenticated and getattr(current_user, 'is_admin', False)
+
+    def _list_thumbnail(self, context, model, name):
+        url = getattr(model, name, None)
+        if url:
+            return Markup(f'<img src="{url}" style="max-height:50px;max-width:80px;object-fit:cover;border-radius:4px;">')
+        return ''
 
     def _ensure_upload_folder(self, folder_path):
         if not os.path.exists(folder_path):
@@ -73,9 +114,14 @@ class ModelAdminView(ModelView):
 from app.models.banner import Banner
 class BannerAdminView(ModelAdminView):
     column_list = (
-        'id', 'title_ru', 'title_en', 'subtitle_ru', 'subtitle_en',
-        'image_url', 'logo_url', 'button_text_ru', 'button_text_en', 'button_link', 'created_at'
+        'id', 'title_ru', 'title_en', 'image_url', 'logo_url', 'button_link', 'created_at'
     )
+    column_searchable_list = ('title_ru', 'title_en', 'button_link')
+    column_sortable_list = ('id', 'title_ru', 'title_en', 'created_at')
+    column_formatters = {
+        'image_url': lambda v, c, m, n: v._list_thumbnail(c, m, 'image_url'),
+        'logo_url':  lambda v, c, m, n: v._list_thumbnail(c, m, 'logo_url'),
+    }
     form_columns = (
         'title_ru', 'title_en', 'subtitle_ru', 'subtitle_en',
         'image_file', 'logo_file', 'button_text_ru', 'button_text_en', 'button_link'
@@ -103,43 +149,98 @@ class BannerAdminView(ModelAdminView):
 
 # Category Admin
 from app.models.category import Category
+
+class ColorPickerWidget:
+    """Renders an HTML5 color input with a live hex-value label."""
+    def __call__(self, field, **kwargs):
+        kwargs.setdefault('id', field.id)
+        kwargs['type'] = 'color'
+        kwargs['class'] = kwargs.get('class', '') + ' form-control form-control-color'
+        kwargs['style'] = 'width:60px;height:38px;padding:2px;cursor:pointer;display:inline-block;vertical-align:middle;'
+        value = field._value() or '#ffffff'
+        kwargs['value'] = value
+        html = (
+            f'<input {html_params(name=field.name, **kwargs)}>'
+            f'<span id="{field.id}_hex" style="margin-left:8px;font-family:monospace;vertical-align:middle;">'
+            f'{value}</span>'
+            f'<script>'
+            f'(function(){{'
+            f'  var inp=document.getElementById("{field.id}");'
+            f'  var lbl=document.getElementById("{field.id}_hex");'
+            f'  if(inp&&lbl){{'
+            f'    inp.addEventListener("input",function(){{lbl.textContent=inp.value;}});'
+            f'  }}'
+            f'}})();'
+            f'</script>'
+        )
+        return Markup(html)
+
+
+class ColorField(StringField):
+    widget = ColorPickerWidget()
+
+    def _value(self):
+        return self.data or '#ffffff'
+
 class CategoryAdminView(ModelAdminView):
-    column_list = ('id', 'title_ru', 'title_en', 'slug', 'link', 'bg_color', 'description_ru', 'description_en', 'created_at')
+    column_list = ('id', 'title_ru', 'title_en', 'slug', 'bg_color', 'created_at')
+    column_searchable_list = ('title_ru', 'title_en', 'slug')
+    column_sortable_list = ('id', 'title_ru', 'title_en', 'created_at')
     form_columns = ('title_ru', 'title_en', 'slug', 'link', 'bg_color', 'description_ru', 'description_en')
     form_overrides = {
         'description_ru': CKEditorField,
-        'description_en': CKEditorField
+        'description_en': CKEditorField,
+        'bg_color': ColorField
     }
 
 from wtforms.fields import SelectField
 from wtforms.widgets import Select
 from wtforms_sqlalchemy.fields import QuerySelectMultipleField
 from wtforms_sqlalchemy.fields import QuerySelectMultipleField as BaseQuerySelectMultipleField
-from wtforms_sqlalchemy.fields import QuerySelectMultipleField as BaseQuerySelectMultipleField
 
 class CompatibleQuerySelectField(QuerySelectField):
     def iter_choices(self):
         for choice in super().iter_choices():
-            yield choice
+            # WTForms 3.x expects 4-element tuples; pad older 3-element tuples
+            if len(choice) == 3:
+                yield choice + ({},)
+            else:
+                yield choice
 
 class CompatibleQuerySelectMultipleField(BaseQuerySelectMultipleField):
     def iter_choices(self):
         for choice in super().iter_choices():
-            yield choice[:3]
+            # WTForms 3.x expects 4-element tuples; pad older 3-element tuples
+            if len(choice) == 3:
+                yield choice + ({},)
+            else:
+                yield choice
 
 class PlainSelectField(SelectField):
     widget = Select()
+
+    def iter_choices(self):
+        for choice in super().iter_choices():
+            # WTForms 3.x expects (value, label, selected, render_kw)
+            if len(choice) == 3:
+                yield choice + ({},)
+            else:
+                yield choice
 from wtforms import TextAreaField
+from wtforms.widgets import html_params
 from app.models.project import Project
 from app.utils.image_preview import MultipleImagePreviewField
 
 class ProjectAdminView(ModelAdminView):
     column_list = (
-        'id', 'title_ru', 'title_en', 'description_ru', 'description_en',
-        'main_image', 'bg_color', 'type', 'created_at'
+        'id', 'title_ru', 'title_en', 'main_image', 'type', 'bg_color', 'created_at'
     )
-    column_filters = ["categories.title_ru"]
-
+    column_searchable_list = ('title_ru', 'title_en', 'description_ru', 'description_en')
+    column_sortable_list = ('id', 'title_ru', 'title_en', 'type', 'created_at')
+    column_filters = ['type', 'created_at', 'categories.title_ru']
+    column_formatters = {
+        'main_image': lambda v, c, m, n: v._list_thumbnail(c, m, 'main_image'),
+    }
     form_columns = (
         'title_ru', 'title_en', 'description_ru', 'description_en',
         'main_image_file', 'content_ru', 'content_en',
@@ -189,6 +290,7 @@ class ProjectAdminView(ModelAdminView):
         'deliverables_en': CKEditorField,
         'type': PlainSelectField,
         'categories': CompatibleQuerySelectMultipleField,
+        'bg_color': ColorField,
     }
     form_args = {
         'type': {
@@ -221,13 +323,14 @@ class ProjectAdminView(ModelAdminView):
             model.main_image = f'/Uploads/{filename}'
         
         if form.images_files.data:
-            filenames = []
+            filenames = list(model.images or [])
             for img in form.images_files.data:
-                filename = secure_filename(img.filename)
-                file_path = os.path.join(upload_folder, filename)
-                current_app.logger.info(f"Сохранение дополнительного изображения в: {file_path}")
-                img.save(file_path)
-                filenames.append(f'/Uploads/{filename}')
+                if img and hasattr(img, 'filename') and img.filename:
+                    filename = secure_filename(img.filename)
+                    file_path = os.path.join(upload_folder, filename)
+                    current_app.logger.info(f"Сохранение дополнительного изображения в: {file_path}")
+                    img.save(file_path)
+                    filenames.append(f'/Uploads/{filename}')
             model.images = filenames
 # Blog Admin
 from flask_admin.contrib.sqla import ModelView
@@ -239,9 +342,13 @@ import os
 
 class BlogAdminView(ModelAdminView):
     column_list = (
-        'id', 'title_ru', 'title_en', 'description_ru', 'description_en',
-        'image_url', 'date', 'created_at'
+        'id', 'title_ru', 'title_en', 'image_url', 'date', 'created_at'
     )
+    column_searchable_list = ('title_ru', 'title_en', 'description_ru', 'description_en')
+    column_sortable_list = ('id', 'title_ru', 'title_en', 'date', 'created_at')
+    column_formatters = {
+        'image_url': lambda v, c, m, n: v._list_thumbnail(c, m, 'image_url'),
+    }
 
     form_extra_fields = {
         'image_file': FileUploadField(
@@ -290,6 +397,11 @@ class BlogAdminView(ModelAdminView):
 from app.models.client import Client
 class ClientAdminView(ModelAdminView):
     column_list = ('id', 'logo_url', 'default_logo', 'created_at')
+    column_sortable_list = ('id', 'created_at')
+    column_formatters = {
+        'logo_url':    lambda v, c, m, n: v._list_thumbnail(c, m, 'logo_url'),
+        'default_logo': lambda v, c, m, n: v._list_thumbnail(c, m, 'default_logo'),
+    }
     form_columns = ('logo_file', 'default_logo_file')
     form_extra_fields = {
         'logo_file': FileUploadField('Client Logo', base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS),
@@ -316,6 +428,8 @@ class ClientAdminView(ModelAdminView):
 from app.models.about import About, AboutItem
 class AboutAdminView(ModelAdminView):
     column_list = ('id', 'title_ru', 'title_en', 'description_ru', 'description_en')
+    column_searchable_list = ('title_ru', 'title_en')
+    column_sortable_list = ('id', 'title_ru', 'title_en')
     form_columns = ('title_ru', 'title_en', 'description_ru', 'description_en')
     form_overrides = {
         'description_ru': CKEditorField,
@@ -329,7 +443,7 @@ class AboutItemAdminView(ModelAdminView):
         'deliverables_ru', 'deliverables_en', 'color', 'type', 'created_at'
     )
     form_columns = (
-        'about_id', 'title_ru', 'title_en', 'description_ru', 'description_en',
+        'about', 'title_ru', 'title_en', 'description_ru', 'description_en',
         'background_image_file', 'button_text_ru', 'button_text_en', 'button_link',
         'deliverables_ru', 'deliverables_en', 'color', 'type', 'categories'
     )
@@ -340,7 +454,23 @@ class AboutItemAdminView(ModelAdminView):
         'description_ru': CKEditorField,
         'description_en': CKEditorField,
         'deliverables_ru': CKEditorField,
-        'deliverables_en': CKEditorField
+        'deliverables_en': CKEditorField,
+        'color': ColorField,
+        # WTForms 3.x compat: use patched select fields for relationships
+        'about': CompatibleQuerySelectField,
+        'categories': CompatibleQuerySelectMultipleField,
+    }
+    form_args = {
+        'about': {
+            'query_factory': lambda: About.query.all(),
+            'get_label': 'title_ru',
+            'allow_blank': True,
+        },
+        'categories': {
+            'query_factory': lambda: Category.query.order_by(Category.title_ru),
+            'get_label': 'title_ru',
+            'allow_blank': True,
+        },
     }
 
     def on_model_change(self, form, model, is_created):
@@ -353,18 +483,11 @@ class AboutItemAdminView(ModelAdminView):
             model.background_image_url = f'/Uploads/{filename}'
 
 # Service Admin
-from flask_admin.contrib.sqla import ModelView
-from flask_ckeditor import CKEditorField
-from app.models.category import Category
-
-# Используем кастомный класс с совместимостью
-class CompatibleQuerySelectField(QuerySelectField):
-    def iter_choices(self):
-        for choice in super().iter_choices():
-            yield choice[:3]
 from app.models.project import Project
 from app.models.blog import Blog
-class ServiceAdminView(ModelAdminView):  # 👈 заменили ModelView на ModelAdminView
+class ServiceAdminView(ModelAdminView):
+    column_list = ('id', 'category', 'created_at')
+    column_sortable_list = ('id', 'created_at')
     form_columns = ('content_ru', 'content_en', 'category', 'projects', 'blogs')
 
     form_overrides = {
@@ -388,12 +511,12 @@ class ServiceAdminView(ModelAdminView):  # 👈 заменили ModelView на 
 
     form_args.update({
         'projects': {
-            'query_factory': lambda: Project.query.order_by(Project.title_ru).all(),
+            'query_factory': lambda: Project.query.order_by(Project.title_ru),
             'get_label': 'title_ru',
             'allow_blank': True
         },
         'blogs': {
-            'query_factory': lambda: Blog.query.order_by(Blog.title_ru).all(),
+            'query_factory': lambda: Blog.query.order_by(Blog.title_ru),
             'get_label': 'title_ru',
             'allow_blank': True
         }
@@ -407,6 +530,8 @@ class ServiceAdminView(ModelAdminView):  # 👈 заменили ModelView на 
 # Portfolio PDF Admin
 from app.models.portfolio_pdf import PortfolioPDF
 class PortfolioPDFAdminView(ModelAdminView):
+    column_list = ('id', 'pdf_file')
+    column_sortable_list = ('id',)
     form_overrides = {
         'pdf_file': FileUploadField
     }
@@ -436,6 +561,8 @@ from wtforms import PasswordField
 
 class UserAdminView(ModelAdminView):
     column_list = ('id', 'username', 'is_admin', 'created_at')
+    column_searchable_list = ('username',)
+    column_sortable_list = ('id', 'username', 'is_admin', 'created_at')
     form_columns = ('username', 'password', 'is_admin')
 
     form_extra_fields = {
@@ -451,13 +578,19 @@ class UserAdminView(ModelAdminView):
 
 from app.models.contact import Contact
 class ContactAdminView(ModelAdminView):
-    column_list = ('id', 'phone', 'address_ru', 'address_tk', 'address_en', 'email', 'social_media', 'created_at')
+    column_list = ('id', 'phone', 'email', 'address_ru', 'created_at')
+    column_searchable_list = ('phone', 'email')
+    column_sortable_list = ('id', 'created_at')
     form_columns = ('phone', 'address_ru', 'address_tk', 'address_en', 'email', 'social_media')
 
-# Partner Admin
 from app.models.partner import Partner
 class PartnerAdminView(ModelAdminView):
-    column_list = ('id', 'name_ru', 'name_en', 'logo_url', 'description_ru', 'description_en', 'created_at')
+    column_list = ('id', 'name_ru', 'name_en', 'logo_url', 'created_at')
+    column_searchable_list = ('name_ru', 'name_en')
+    column_sortable_list = ('id', 'name_ru', 'name_en', 'created_at')
+    column_formatters = {
+        'logo_url': lambda v, c, m, n: v._list_thumbnail(c, m, 'logo_url'),
+    }
     form_columns = ('name_ru', 'name_en', 'logo_file', 'description_ru', 'description_en')
     form_extra_fields = {
         'logo_file': FileUploadField(
@@ -483,16 +616,33 @@ class PartnerAdminView(ModelAdminView):
             raise ValueError("Logo image required")
 from app.models.contact_request import ContactRequest
 
-from app.models.contact_request import ContactRequest
+class ContactRequestAdmin(ModelAdminView):
+    can_create = False
+    can_edit = False
+    can_delete = True
 
-class ContactRequestAdmin(ModelAdminView):  # Можно наследовать от твоего базового ModelAdminView, чтобы соблюсти права доступа и стили
-    can_create = False  # Запрет на создание через админку (если нужно)
-    can_edit = False    # Запрет на редактирование (по желанию)
-    can_delete = True   # Разрешаем удалять (по желанию)
-    
-    column_list = ('full_name', 'email', 'phone', 'subject', 'message', 'meeting_date', 'meeting_time', 'timezone', 'terms_accepted')
+    column_list = ('id', 'full_name', 'email', 'phone', 'subject', 'meeting_date', 'terms_accepted')
     column_searchable_list = ('full_name', 'email', 'phone', 'message')
+    column_sortable_list = ('id', 'full_name', 'email', 'meeting_date')
     column_filters = ('meeting_date', 'terms_accepted')
+
+from app.models.review import Review
+class ReviewAdminView(ModelAdminView):
+    column_list = ('id', 'author_ru', 'author_en', 'content_ru', 'project_id', 'created_at')
+    column_searchable_list = ('author_ru', 'author_en', 'content_ru', 'content_en')
+    column_sortable_list = ('id', 'created_at')
+    form_columns = ('content_ru', 'content_tk', 'content_en', 'author_ru', 'author_tk', 'author_en', 'project')
+    # WTForms 3.x compat: patch QuerySelectField for the project FK relationship
+    form_overrides = {
+        'project': CompatibleQuerySelectField,
+    }
+    form_args = {
+        'project': {
+            'query_factory': lambda: Project.query.order_by(Project.title_ru),
+            'get_label': 'title_ru',
+            'allow_blank': True,
+        }
+    }
 
 def get_locale_from_request():
     if has_request_context():
@@ -518,6 +668,9 @@ def create_app():
     app.config['BABEL_DEFAULT_LOCALE'] = 'en'
     app.config['BABEL_DEFAULT_TIMEZONE'] = 'UTC'
     app.config['BABEL_TRANSLATION_DIRECTORIES'] = os.path.join(os.path.dirname(__file__), 'translations')
+    # CKEditor — serve from flask-ckeditor bundled files (offline, no CDN)
+    app.config['CKEDITOR_SERVE_LOCAL'] = True
+    app.config['CKEDITOR_PKG_TYPE'] = 'standard'
     # ... остальная часть функции create_app остается без изменений ...
     logging.basicConfig(level=logging.INFO)
     app.logger.setLevel(logging.INFO)
@@ -572,23 +725,28 @@ def create_app():
     from app.models.contact import Contact
     from app.models.user import User
 
-    admin = Admin(app, index_view=MyAdminIndexView(), template_mode='bootstrap4')
+    admin = Admin(app, index_view=MyAdminIndexView(), template_mode='bootstrap4', name='Tagma Admin', base_template='admin/my_master.html')
 
-    admin.add_view(BannerAdminView(Banner, db.session, name=_('Banner')))
-    admin.add_view(CategoryAdminView(Category, db.session, name=_('Category')))
-    admin.add_view(ProjectAdminView(Project, db.session, name=_('Project')))
-    admin.add_view(BlogAdminView(Blog, db.session, name=_('Blog')))
-    admin.add_view(ClientAdminView(Client, db.session, name=_('Client')))
-    admin.add_view(AboutAdminView(About, db.session, name=_('About')))
-    # admin.add_view(AboutItemAdminView(AboutItem, db.session, name=_('About Item')))
-    admin.add_view(ServiceAdminView(Service, db.session, name=_('Service')))
-    admin.add_view(PortfolioPDFAdminView(PortfolioPDF, db.session, name=_('Portfolio PDF')))
-    admin.add_view(UserAdminView(User, db.session, name=_('User')))
-    admin.add_view(ContactAdminView(Contact, db.session, name=_('Contact')))
-    admin.add_view(PartnerAdminView(Partner, db.session, name=_('Partner')))
+    # --- Контент ---
+    admin.add_view(BannerAdminView(Banner, db.session,       name=_('Banner'),        category=_('Content')))
+    admin.add_view(ProjectAdminView(Project, db.session,     name=_('Project'),       category=_('Content')))
+    admin.add_view(BlogAdminView(Blog, db.session,           name=_('Blog'),          category=_('Content')))
+    admin.add_view(ServiceAdminView(Service, db.session,     name=_('Service'),       category=_('Content')))
+    # --- Каталог ---
+    admin.add_view(CategoryAdminView(Category, db.session,  name=_('Category'),      category=_('Catalog')))
+    admin.add_view(ClientAdminView(Client, db.session,       name=_('Client'),        category=_('Catalog')))
+    admin.add_view(PartnerAdminView(Partner, db.session,     name=_('Partner'),       category=_('Catalog')))
+    # --- Настройки ---
+    admin.add_view(AboutAdminView(About, db.session,         name=_('About'),         category=_('Settings')))
+    admin.add_view(ContactAdminView(Contact, db.session,     name=_('Contact'),       category=_('Settings')))
+    admin.add_view(PortfolioPDFAdminView(PortfolioPDF, db.session, name=_('Portfolio PDF'), category=_('Settings')))
+    admin.add_view(UserAdminView(User, db.session,           name=_('User'),          category=_('Settings')))
+    # --- Обращения ---
+    admin.add_view(ContactRequestAdmin(ContactRequest, db.session, name=_('Contact Requests'), category=_('Requests')))
+    admin.add_view(ReviewAdminView(Review, db.session, name=_('Reviews'), category=_('Content')))
+    # --- Ссылки ---
     admin.add_link(MenuLink(name=_('Go to Website'), url='/'))
     admin.add_link(MenuLink(name=_('Logout'), url='/logout'))
-    admin.add_view(ContactRequestAdmin(ContactRequest, db.session, name='Contact Requests'))
     with app.app_context():
         try:
             db.create_all()

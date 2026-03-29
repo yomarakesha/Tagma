@@ -26,7 +26,6 @@ main_bp = Blueprint('main', __name__)
 def root_redirect():
     return redirect('/admin')
 
-@main_bp.route('/')
 @main_bp.route('/index')
 def index():
     banners = Banner.query.all()
@@ -101,12 +100,12 @@ def get_partners():
 def get_portfolio():
     pdfs = PortfolioPDF.query.all()
     return jsonify({'status': 'success', 'data': [p.to_dict() for p in pdfs]})
+
 @main_bp.route('/Uploads/<path:filename>')
 def uploaded_file(filename):
     return send_from_directory(
         current_app.config['UPLOAD_FOLDER'],
-        filename,
-        as_attachment=True
+        filename
     )
 
 @main_bp.route('/api/contact-request', methods=['POST'])
@@ -141,12 +140,7 @@ def get_contact():
         'status': 'success',
         'data': contact.to_dict()
     })
-@main_bp.route('/api/portfolio_pdf', methods=['GET'])
-def get_latest_portfolio_pdf():
-    latest_pdf = PortfolioPDF.query.order_by(PortfolioPDF.created_at.desc()).first()
-    if not latest_pdf:
-        return jsonify({'status': 'error', 'message': 'No PDF found'}), 404
-    return jsonify({'status': 'success', 'data': latest_pdf.to_dict()})
+
 
 @main_bp.route('/api/about')
 def get_about():
@@ -209,17 +203,14 @@ def blog_detail(id):
     return jsonify({'status': 'success', 'data': blog.to_dict()})
 
 # --- API проектов и работ (объединены) ---
-@main_bp.route('/api/projects', methods=['POST'])
-def create_or_update_project():
-    # Просто перенаправить на существующий обработчик для projects_works
-    return create_or_update_project_work()
-
 @main_bp.route('/api/projects', methods=['GET'])
 def projects_works_list():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
     search = request.args.get('search', '').strip()
     project_id = request.args.get('id', type=int)
+
+    query = Project.query
 
     if project_id:
         query = query.filter(Project.id == project_id)
@@ -230,7 +221,6 @@ def projects_works_list():
             (Project.title_en.ilike(f'%{search}%'))
         )
 
-    query = Project.query
     pagination = query.order_by(Project.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
     items = pagination.items
 

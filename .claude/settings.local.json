@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -r \"fetch\\\\|api\\\\|get_\\\\|post_\" '/c/Users/Windows 11 Pro/Desktop/projects/Tagma/app/routes/' --include=*.py)",
+      "Bash(python seed.py)",
+      "Bash(curl -s http://localhost:5000/api/banners)",
+      "Bash(curl -s \"http://localhost:5000/api/banners?lang=ru\")",
+      "Bash(python -m json.tool --no-ensure-ascii)",
+      "Bash(curl -s \"http://localhost:5000/api/projects\")",
+      "Bash(python -m json.tool)",
+      "Bash(curl -s \"http://localhost:5000/api/blog/\")",
+      "Bash(curl -s \"http://localhost:5000/api/contact\")"
+    ]
+  }
+}

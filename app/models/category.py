@@ -26,3 +26,14 @@ class Category(db.Model):
         }
     def __str__(self):
         return f"ID {self.id}"
+
+from sqlalchemy import event
+from app.utils.slugify import slugify
+
+@event.listens_for(Category, 'before_insert')
+@event.listens_for(Category, 'before_update')
+def generate_category_slug(mapper, connection, target):
+    if not target.slug:
+        title = target.title_en or target.title_ru
+        if title:
+            target.slug = slugify(title)

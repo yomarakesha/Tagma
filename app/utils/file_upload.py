@@ -1,4 +1,4 @@
-from wtforms import Field
+from wtforms import Field, ValidationError
 from wtforms.widgets import FileInput
 
 class FileUploadField(Field):
@@ -15,6 +15,10 @@ class FileUploadField(Field):
     def process_formdata(self, valuelist):
         if valuelist:
             self.data = valuelist[0]
+            if self.data and hasattr(self.data, 'filename') and self.data.filename and self.allowed_extensions:
+                ext = self.data.filename.rsplit('.', 1)[-1].lower() if '.' in self.data.filename else ''
+                if ext not in self.allowed_extensions:
+                    raise ValidationError(f'File extension .{ext} is not allowed. Allowed: {", ".join(self.allowed_extensions)}')
         else:
             self.data = None
 
@@ -25,4 +29,10 @@ class MultipleFileUploadField(FileUploadField):
     widget = FileInput(multiple=True)
 
     def process_formdata(self, valuelist):
-        self.data = valuelist
+        self.data = []
+        for item in valuelist:
+            if item and hasattr(item, 'filename') and item.filename and self.allowed_extensions:
+                ext = item.filename.rsplit('.', 1)[-1].lower() if '.' in item.filename else ''
+                if ext not in self.allowed_extensions:
+                    raise ValidationError(f'File extension .{ext} is not allowed. Allowed: {", ".join(self.allowed_extensions)}')
+            self.data.append(item)

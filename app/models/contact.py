@@ -20,5 +20,5 @@ class Contact(db.Model):
             'address': getattr(self, f'address_{locale}', self.address_en),
             'email': self.email,
             'social_media': self.social_media,
-            'created_at': self.created_at.isoformat()
+            'created_at': self.created_at.isoformat() if self.created_at else None
         }

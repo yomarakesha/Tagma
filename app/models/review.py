@@ -21,5 +21,5 @@ class Review(db.Model):
             'content': getattr(self, f'content_{locale}', self.content_en),
             'author': getattr(self, f'author_{locale}', self.author_en),
             'project_id': self.project_id,
-            'created_at': self.created_at.isoformat()
+            'created_at': self.created_at.isoformat() if self.created_at else None
         }

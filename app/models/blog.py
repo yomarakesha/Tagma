@@ -31,3 +31,14 @@ class Blog(db.Model):
             'link': self.link or self.slug or "",
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
+
+from sqlalchemy import event
+from app.utils.slugify import slugify
+
+@event.listens_for(Blog, 'before_insert')
+@event.listens_for(Blog, 'before_update')
+def generate_blog_slug(mapper, connection, target):
+    if not target.slug:
+        title = target.title_en or target.title_ru
+        if title:
+            target.slug = slugify(title)
