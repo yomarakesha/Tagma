@@ -9,7 +9,8 @@
       "Bash(curl -s \"http://localhost:5000/api/projects\")",
       "Bash(python -m json.tool)",
       "Bash(curl -s \"http://localhost:5000/api/blog/\")",
-      "Bash(curl -s \"http://localhost:5000/api/contact\")"
+      "Bash(curl -s \"http://localhost:5000/api/contact\")",
+      "Bash(ls .env*)"
     ]
   }
 }

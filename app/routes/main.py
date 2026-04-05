@@ -210,10 +210,15 @@ def projects_works_list():
     search = request.args.get('search', '').strip()
     project_id = request.args.get('id', type=int)
 
+    category_id = request.args.get('category', type=int)
+
     query = Project.query
 
     if project_id:
         query = query.filter(Project.id == project_id)
+
+    if category_id:
+        query = query.filter(Project.categories.any(Category.id == category_id))
 
     if search:
         query = query.filter(
