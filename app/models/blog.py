@@ -25,10 +25,13 @@ class Blog(db.Model):
             'title': getattr(self, f'title_{locale}', self.title_en),
             'description': getattr(self, f'description_{locale}', self.description_en),
             'image_url': self.image_url,
-            'additional_images': self.additional_images,  # если это строка с JSON — можно преобразовать через json.loads
+            'additional_images': self.additional_images if isinstance(self.additional_images, list) else [],
             'date': self.date.isoformat() if self.date else None,
-            'read_time': self.read_time or "3 min read",  # fallback если None
+            'read_time': self.read_time or "3 min read",
             'link': self.link or self.slug or "",
+            'slug': self.slug or "",
+            'tags': self.tags if isinstance(self.tags, list) else [],
+            'categories': [],
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 

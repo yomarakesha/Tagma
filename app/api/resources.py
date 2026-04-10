@@ -16,46 +16,38 @@ from fpdf import FPDF
 # Парсер для валидации данных Banner
 banner_parser = reqparse.RequestParser()
 banner_parser.add_argument('title_ru', type=str, required=True, help='Title (Russian) is required')
-banner_parser.add_argument('title_tk', type=str, required=True, help='Title (Turkmen) is required')
 banner_parser.add_argument('title_en', type=str, required=True, help='Title (English) is required')
 banner_parser.add_argument('subtitle_ru', type=str, required=True, help='Subtitle (Russian) is required')
-banner_parser.add_argument('subtitle_tk', type=str, required=True, help='Subtitle (Turkmen) is required')
 banner_parser.add_argument('subtitle_en', type=str, required=True, help='Subtitle (English) is required')
 banner_parser.add_argument('image_url', type=str, required=True, help='Image URL is required')
 banner_parser.add_argument('button_text_ru', type=str, required=True, help='Button text (Russian) is required')
-banner_parser.add_argument('button_text_tk', type=str, required=True, help='Button text (Turkmen) is required')
 banner_parser.add_argument('button_text_en', type=str, required=True, help='Button text (English) is required')
 banner_parser.add_argument('button_link', type=str, required=True, help='Button link is required')
 
 # Парсер для валидации данных Project
 project_parser = reqparse.RequestParser()
 project_parser.add_argument('title_ru', type=str, required=True, help='Title (Russian) is required')
-project_parser.add_argument('title_tk', type=str, required=True, help='Title (Turkmen) is required')
 project_parser.add_argument('title_en', type=str, required=True, help='Title (English) is required')
 project_parser.add_argument('description_ru', type=str, required=True, help='Description (Russian) is required')
-project_parser.add_argument('description_tk', type=str, required=True, help='Description (Turkmen) is required')
 project_parser.add_argument('description_en', type=str, required=True, help='Description (English) is required')
-project_parser.add_argument('background_image_url', type=str, required=True, help='Background image URL is required')
-project_parser.add_argument('button_text_ru', type=str, required=True, help='Button text (Russian) is required')
-project_parser.add_argument('button_text_tk', type=str, required=True, help='Button text (Turkmen) is required')
-project_parser.add_argument('button_text_en', type=str, required=True, help='Button text (English) is required')
-project_parser.add_argument('button_link', type=str, required=True, help='Button link is required')
-project_parser.add_argument('deliverables_ru', type=str, default=None)
-project_parser.add_argument('deliverables_tk', type=str, default=None)
-project_parser.add_argument('deliverables_en', type=str, default=None)
+project_parser.add_argument('main_image', type=str, default=None)
+project_parser.add_argument('content_ru', type=str, default=None)
+project_parser.add_argument('content_en', type=str, default=None)
+project_parser.add_argument('tags_ru', type=str, default=None)
+project_parser.add_argument('tags_en', type=str, default=None)
+project_parser.add_argument('bg_color', type=str, default=None)
+project_parser.add_argument('type', type=str, required=True, help='Type is required (branding or others)')
 
 # Парсер для валидации данных Blog
 blog_parser = reqparse.RequestParser()
 blog_parser.add_argument('title_ru', type=str, required=True, help='Title (Russian) is required')
-blog_parser.add_argument('title_tk', type=str, required=True, help='Title (Turkmen) is required')
 blog_parser.add_argument('title_en', type=str, required=True, help='Title (English) is required')
 blog_parser.add_argument('description_ru', type=str, required=True, help='Description (Russian) is required')
-blog_parser.add_argument('description_tk', type=str, required=True, help='Description (Turkmen) is required')
 blog_parser.add_argument('description_en', type=str, required=True, help='Description (English) is required')
 blog_parser.add_argument('image_url', type=str, required=True, help='Image URL is required')
 blog_parser.add_argument('additional_images', type=str, default=None)
 blog_parser.add_argument('date', type=str, required=True, help='Date is required (YYYY-MM-DD)')
-blog_parser.add_argument('read_time', type=str, required=True, help='Read time is required')
+blog_parser.add_argument('read_time', type=str, default=None)
 blog_parser.add_argument('link', type=str, default='/')
 
 # Парсер для загрузки изображения
@@ -83,14 +75,11 @@ class BannerResource(Resource):
         args = banner_parser.parse_args()
         new_banner = Banner(
             title_ru=args['title_ru'],
-            title_tk=args['title_tk'],
             title_en=args['title_en'],
             subtitle_ru=args['subtitle_ru'],
-            subtitle_tk=args['subtitle_tk'],
             subtitle_en=args['subtitle_en'],
             image_url=args['image_url'],
             button_text_ru=args['button_text_ru'],
-            button_text_tk=args['button_text_tk'],
             button_text_en=args['button_text_en'],
             button_link=args['button_link']
         )
@@ -102,14 +91,11 @@ class BannerResource(Resource):
         banner = Banner.query.get_or_404(banner_id)
         args = banner_parser.parse_args()
         banner.title_ru = args['title_ru']
-        banner.title_tk = args['title_tk']
         banner.title_en = args['title_en']
         banner.subtitle_ru = args['subtitle_ru']
-        banner.subtitle_tk = args['subtitle_tk']
         banner.subtitle_en = args['subtitle_en']
         banner.image_url = args['image_url']
         banner.button_text_ru = args['button_text_ru']
-        banner.button_text_tk = args['button_text_tk']
         banner.button_text_en = args['button_text_en']
         banner.button_link = args['button_link']
         db.session.commit()
@@ -161,19 +147,14 @@ class ProjectResource(Resource):
         args = project_parser.parse_args()
         new_project = Project(
             title_ru=args['title_ru'],
-            title_tk=args['title_tk'],
             title_en=args['title_en'],
             description_ru=args['description_ru'],
-            description_tk=args['description_tk'],
             description_en=args['description_en'],
-            background_image_url=args['background_image_url'],
-            button_text_ru=args['button_text_ru'],
-            button_text_tk=args['button_text_tk'],
-            button_text_en=args['button_text_en'],
-            button_link=args['button_link'],
-            deliverables_ru=args['deliverables_ru'],
-            deliverables_tk=args['deliverables_tk'],
-            deliverables_en=args['deliverables_en']
+            main_image=args['main_image'],
+            content_ru=args['content_ru'],
+            content_en=args['content_en'],
+            bg_color=args['bg_color'],
+            type=args['type']
         )
         db.session.add(new_project)
         db.session.commit()
@@ -183,19 +164,14 @@ class ProjectResource(Resource):
         project = Project.query.get_or_404(project_id)
         args = project_parser.parse_args()
         project.title_ru = args['title_ru']
-        project.title_tk = args['title_tk']
         project.title_en = args['title_en']
         project.description_ru = args['description_ru']
-        project.description_tk = args['description_tk']
         project.description_en = args['description_en']
-        project.background_image_url = args['background_image_url']
-        project.button_text_ru = args['button_text_ru']
-        project.button_text_tk = args['button_text_tk']
-        project.button_text_en = args['button_text_en']
-        project.button_link = args['button_link']
-        project.deliverables_ru = args['deliverables_ru']
-        project.deliverables_tk = args['deliverables_tk']
-        project.deliverables_en = args['deliverables_en']
+        project.main_image = args['main_image']
+        project.content_ru = args['content_ru']
+        project.content_en = args['content_en']
+        project.bg_color = args['bg_color']
+        project.type = args['type']
         db.session.commit()
         return {'message': 'Project updated successfully'}, 200
 
@@ -241,10 +217,8 @@ class BlogResource(Resource):
         args = blog_parser.parse_args()
         new_blog = Blog(
             title_ru=args['title_ru'],
-            title_tk=args['title_tk'],
             title_en=args['title_en'],
             description_ru=args['description_ru'],
-            description_tk=args['description_tk'],
             description_en=args['description_en'],
             image_url=args['image_url'],
             additional_images=args['additional_images'],
@@ -261,10 +235,8 @@ class BlogResource(Resource):
         blog = Blog.query.get_or_404(blog_id)
         args = blog_parser.parse_args()
         blog.title_ru = args['title_ru']
-        blog.title_tk = args['title_tk']
         blog.title_en = args['title_en']
         blog.description_ru = args['description_ru']
-        blog.description_tk = args['description_tk']
         blog.description_en = args['description_en']
         blog.image_url = args['image_url']
         blog.additional_images = args['additional_images']

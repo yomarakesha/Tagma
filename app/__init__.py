@@ -244,9 +244,9 @@ class ProjectAdminView(ModelAdminView):
     form_columns = (
         'title_ru', 'title_en', 'description_ru', 'description_en',
         'main_image_file', 'content_ru', 'content_en',
-        'tags_ru', 'tags_en', 'images', 'bg_color', 'type', 'categories'
+        'tags_ru_input', 'tags_en_input', 'bg_color', 'type', 'categories',
+        'images_files', 'existing_images_preview'
     )
-    form_columns += ('images_files', 'existing_images_preview')
 
     form_extra_fields = {
         'main_image_file': FileUploadField(
@@ -260,6 +260,8 @@ class ProjectAdminView(ModelAdminView):
             allowed_extensions=ALLOWED_EXTENSIONS
         ),
         'existing_images_preview': MultipleImagePreviewField('Загруженные изображения', existing_images=[]),
+        'tags_ru_input': TextAreaField('Теги RU (через запятую)', description='Например: Брендинг, Дизайн'),
+        'tags_en_input': TextAreaField('Теги EN (через запятую)', description='Например: Branding, Design'),
     }
 
     def on_form_prefill(self, form, id):
@@ -269,10 +271,9 @@ class ProjectAdminView(ModelAdminView):
 
         # Удаление изображения через query-параметр
         remove_image_url = request.args.get('remove_image')
-        if remove_image_url and remove_image_url in project.images:
+        if remove_image_url and project.images and remove_image_url in project.images:
             project.images.remove(remove_image_url)
             try:
-                # Удаляем сам файл, если он существует
                 abs_path = os.path.join(current_app.root_path, remove_image_url.lstrip('/'))
                 if os.path.exists(abs_path):
                     os.remove(abs_path)
@@ -280,8 +281,14 @@ class ProjectAdminView(ModelAdminView):
                 current_app.logger.warning(f"Не удалось удалить файл: {e}")
             db.session.commit()
 
-        # Обновлённый список
-        form.existing_images_preview.existing_images = project.images
+        # Обновлённый список изображений
+        form.existing_images_preview.existing_images = project.images or []
+
+        # Подставить теги в текстовые поля
+        if project.tags_ru and isinstance(project.tags_ru, list):
+            form.tags_ru_input.data = ', '.join(project.tags_ru)
+        if project.tags_en and isinstance(project.tags_en, list):
+            form.tags_en_input.data = ', '.join(project.tags_en)
 
     form_overrides = {
         'description_ru': CKEditorField,
@@ -332,6 +339,17 @@ class ProjectAdminView(ModelAdminView):
                     img.save(file_path)
                     filenames.append(f'/Uploads/{filename}')
             model.images = filenames
+
+        if form.tags_ru_input.data:
+            model.tags_ru = [t.strip() for t in form.tags_ru_input.data.split(',') if t.strip()]
+        else:
+            model.tags_ru = []
+
+        if form.tags_en_input.data:
+            model.tags_en = [t.strip() for t in form.tags_en_input.data.split(',') if t.strip()]
+        else:
+            model.tags_en = []
+
 # Blog Admin
 from flask_admin.contrib.sqla import ModelView
 from flask_ckeditor import CKEditorField
@@ -350,6 +368,11 @@ class BlogAdminView(ModelAdminView):
         'image_url': lambda v, c, m, n: v._list_thumbnail(c, m, 'image_url'),
     }
 
+    form_columns = (
+        'title_ru', 'title_en', 'description_ru', 'description_en',
+        'image_file', 'additional_images_files', 'date', 'read_time', 'link', 'tags_input'
+    )
+
     form_extra_fields = {
         'image_file': FileUploadField(
             'Main Image',
@@ -360,18 +383,19 @@ class BlogAdminView(ModelAdminView):
             'Доп. изображения',
             base_path=lambda: current_app.config['UPLOAD_FOLDER'],
             allowed_extensions=ALLOWED_EXTENSIONS
-        )
+        ),
+        'tags_input': TextAreaField('Теги (через запятую)', description='Например: Branding, Design, Logo'),
     }
-
-    form_columns = (
-        'title_ru', 'title_en', 'description_ru', 'description_en',
-        'image_file', 'additional_images_files', 'date', 'created_at'
-    )
 
     form_overrides = {
         'description_ru': CKEditorField,
         'description_en': CKEditorField
     }
+
+    def on_form_prefill(self, form, id):
+        blog = self.model.query.get(id)
+        if blog and blog.tags:
+            form.tags_input.data = ', '.join(blog.tags)
 
     def on_model_change(self, form, model, is_created):
         upload_folder = current_app.config['UPLOAD_FOLDER']
@@ -391,6 +415,11 @@ class BlogAdminView(ModelAdminView):
                 img.save(path)
                 filenames.append(f'/Uploads/{filename}')
             model.additional_images = filenames
+
+        if form.tags_input.data:
+            model.tags = [t.strip() for t in form.tags_input.data.split(',') if t.strip()]
+        else:
+            model.tags = []
 
 
 # Client Admin
@@ -523,8 +552,8 @@ class ServiceAdminView(ModelAdminView):
     })
 
     def on_model_change(self, form, model, is_created):
-        print("form.category.data:", form.category.data)
-        print("type:", type(form.category.data))
+        if form.category.data:
+            model.category = form.category.data
 
 
 # Portfolio PDF Admin

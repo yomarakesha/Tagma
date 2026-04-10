@@ -48,7 +48,7 @@ class Project(db.Model):
             'title': getattr(self, f'title_{locale}', self.title_en),
             'description': getattr(self, f'description_{locale}', self.description_en),
             'content': getattr(self, f'content_{locale}', self.content_en),
-            "tags": (getattr(self, f"tags_{locale}", None) or []) or ["Branding", "Design"],
+            "tags": (lambda t: t if isinstance(t, list) and t else ["Branding", "Design"])(getattr(self, f"tags_{locale}", None)),
             'main_image': self.main_image,
             'images': self.images or [],
             'bg_color': self.bg_color,
