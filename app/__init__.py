@@ -1,4 +1,5 @@
 from flask import Flask, redirect, url_for, request, has_request_context, current_app
+from flask_admin.actions import action
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user
 from flask_admin import Admin, AdminIndexView
@@ -422,20 +423,43 @@ class BlogAdminView(ModelAdminView):
             model.tags = []
 
 
+class InsightsAdminView(BlogAdminView):
+    """Insights — uses the same Blog model but separate admin endpoint."""
+    pass
+
+
 # Client Admin
 from app.models.client import Client
 class ClientAdminView(ModelAdminView):
-    column_list = ('id', 'logo_url', 'default_logo', 'created_at')
-    column_sortable_list = ('id', 'created_at')
+    column_list = ('id', 'logo_url', 'default_logo', 'order', 'created_at')
+    column_sortable_list = ('id', 'order', 'created_at')
+    column_default_sort = ('order', False)
+    column_labels = {
+        'id': 'ID',
+        'logo_url': 'Логотип',
+        'default_logo': 'Логотип по умолчанию',
+        'order': 'Порядок',
+        'created_at': 'Дата создания',
+    }
     column_formatters = {
         'logo_url':    lambda v, c, m, n: v._list_thumbnail(c, m, 'logo_url'),
         'default_logo': lambda v, c, m, n: v._list_thumbnail(c, m, 'default_logo'),
     }
-    form_columns = ('logo_file', 'default_logo_file')
+    form_columns = ('logo_file', 'default_logo_file', 'order')
     form_extra_fields = {
         'logo_file': FileUploadField('Client Logo', base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS),
         'default_logo_file': FileUploadField('Default Logo', base_path=lambda: current_app.config['UPLOAD_FOLDER'], allowed_extensions=ALLOWED_EXTENSIONS)
     }
+
+    @action('delete', 'Удалить', 'Вы уверены, что хотите удалить выбранные записи?')
+    def action_delete(self, ids):
+        try:
+            query = Client.query.filter(Client.id.in_(ids))
+            query.delete(synchronize_session='fetch')
+            db.session.commit()
+        except Exception as ex:
+            db.session.rollback()
+            raise
 
     def on_model_change(self, form, model, is_created):
         upload_folder = current_app.config['UPLOAD_FOLDER']
@@ -614,13 +638,24 @@ class ContactAdminView(ModelAdminView):
 
 from app.models.partner import Partner
 class PartnerAdminView(ModelAdminView):
-    column_list = ('id', 'name_ru', 'name_en', 'logo_url', 'created_at')
+    column_list = ('id', 'name_ru', 'name_en', 'logo_url', 'order', 'created_at')
     column_searchable_list = ('name_ru', 'name_en')
-    column_sortable_list = ('id', 'name_ru', 'name_en', 'created_at')
+    column_sortable_list = ('id', 'name_ru', 'name_en', 'order', 'created_at')
+    column_default_sort = ('order', False)
+    column_labels = {
+        'id': 'ID',
+        'name_ru': 'Название (RU)',
+        'name_en': 'Название (EN)',
+        'logo_url': 'Логотип',
+        'description_ru': 'Описание (RU)',
+        'description_en': 'Описание (EN)',
+        'order': 'Порядок',
+        'created_at': 'Дата создания',
+    }
     column_formatters = {
         'logo_url': lambda v, c, m, n: v._list_thumbnail(c, m, 'logo_url'),
     }
-    form_columns = ('name_ru', 'name_en', 'logo_file', 'description_ru', 'description_en')
+    form_columns = ('name_ru', 'name_en', 'logo_file', 'description_ru', 'description_en', 'order')
     form_extra_fields = {
         'logo_file': FileUploadField(
             'Logo',
@@ -632,6 +667,16 @@ class PartnerAdminView(ModelAdminView):
         'description_ru': CKEditorField,
         'description_en': CKEditorField
     }
+
+    @action('delete', 'Удалить', 'Вы уверены, что хотите удалить выбранные записи?')
+    def action_delete(self, ids):
+        try:
+            query = Partner.query.filter(Partner.id.in_(ids))
+            query.delete(synchronize_session='fetch')
+            db.session.commit()
+        except Exception as ex:
+            db.session.rollback()
+            raise
 
     def on_model_change(self, form, model, is_created):
         upload_folder = current_app.config['UPLOAD_FOLDER']
@@ -765,6 +810,7 @@ def create_app():
     admin.add_view(CategoryAdminView(Category, db.session,  name=_('Category'),      category=_('Catalog')))
     admin.add_view(ClientAdminView(Client, db.session,       name=_('Client'),        category=_('Catalog')))
     admin.add_view(PartnerAdminView(Partner, db.session,     name=_('Partner'),       category=_('Catalog')))
+    admin.add_view(InsightsAdminView(Blog, db.session,       name=_('Insights'),      category=_('Catalog'), endpoint='insights'))
     # --- Настройки ---
     admin.add_view(AboutAdminView(About, db.session,         name=_('About'),         category=_('Settings')))
     admin.add_view(ContactAdminView(Contact, db.session,     name=_('Contact'),       category=_('Settings')))

@@ -8,6 +8,7 @@ class Partner(db.Model):
     logo_url = db.Column(db.String(256), nullable=False)
     description_ru = db.Column(db.Text, nullable=False)
     description_en = db.Column(db.Text, nullable=False)
+    order = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
     def to_dict(self):
@@ -17,5 +18,6 @@ class Partner(db.Model):
             'name': getattr(self, f'name_{locale}', self.name_en),
             'logo_url': self.logo_url,
             'description': getattr(self, f'description_{locale}', self.description_en),
+            'order': self.order,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }

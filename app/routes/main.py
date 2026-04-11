@@ -45,7 +45,7 @@ def get_banners():
 
 @main_bp.route('/api/clients')
 def get_clients():
-    clients = Client.query.all()
+    clients = Client.query.order_by(Client.order.asc(), Client.id.asc()).all()
     return jsonify({
         'status': 'success',
         'data': [client.to_dict() for client in clients]
@@ -93,7 +93,7 @@ def services():
         return jsonify({'status': 'success', 'data': service.to_dict()}), 201
 @main_bp.route('/api/partners')
 def get_partners():
-    partners = Partner.query.all()
+    partners = Partner.query.order_by(Partner.order.asc(), Partner.id.asc()).all()
     return jsonify({'status': 'success', 'data': [p.to_dict() for p in partners]})
 
 @main_bp.route('/api/portfolio_pdf')
